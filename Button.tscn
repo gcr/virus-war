@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://crmntsc1fsy5o"]
+
+[ext_resource type="StyleBox" uid="uid://deedxaf5caicc" path="res://game_button.tres" id="1_dw7xu"]
+[ext_resource type="Script" path="res://VirusButton.gd" id="1_v6hem"]
+[ext_resource type="StyleBox" uid="uid://cowl6aw2bk6ge" path="res://game_focused_button.tres" id="2_tmnht"]
+[ext_resource type="StyleBox" uid="uid://cmeq3ufgup6gk" path="res://game_hatched_button.tres" id="3_juow7"]
+
+[sub_resource type="Theme" id="Theme_73nxe"]
+
+[node name="Button" type="Button"]
+custom_minimum_size = Vector2(64, 64)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = SubResource("Theme_73nxe")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_pressed_color = Color(0, 0, 0, 1)
+theme_override_styles/normal = ExtResource("1_dw7xu")
+theme_override_styles/hover = ExtResource("1_dw7xu")
+theme_override_styles/pressed = ExtResource("3_juow7")
+theme_override_styles/focus = ExtResource("2_tmnht")
+toggle_mode = true
+script = ExtResource("1_v6hem")
+whose_turn = null
