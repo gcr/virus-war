@@ -66,3 +66,6 @@ func advance_state(node: VirusButton) -> void:
 
 func swap_turn_button_pressed() -> void:
 	turn = 1-turn
+
+
+

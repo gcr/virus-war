@@ -32,6 +32,15 @@ var owned_by:
 			return "B"
 		else:
 			return ""
+var owned_by_accounting_for_liveness:
+	get:
+		if not is_dead: return owned_by
+		if state == State.A or state == State.DEAD_B:
+			return "A"
+		elif state == State.B or state == State.DEAD_A:
+			return "B"
+		else:
+			return ""
 var is_alive:
 	get:
 		return state == State.A or state == State.B
@@ -129,7 +138,7 @@ func _draw() -> void:
 				# if we're NOT connected to them
 				should_draw = not connected_to(side1) and not connected_to(side2) and not connected_to(side_corner)
 				# special case: if connections happen crisscross, draw
-				if connected_to(side_corner) and not side1.is_blank and side1.connected_to(side2) and not connected_to(side1) and whose_turn == side1.owned_by:
+				if connected_to(side_corner) and not side1.is_blank and side1.connected_to(side2) and not connected_to(side1) and whose_turn == side1.owned_by_accounting_for_liveness:
 					should_draw = true
 		if should_draw:
 			draw_arc(xy, r, start, end, 16, Color.BLACK, 1.0, true)
@@ -151,5 +160,4 @@ func _draw() -> void:
 	maybe_line.call(Vector2(0, h), Vector2(w, h), bl_circ, br_circ, below)
 	maybe_line.call(Vector2(0, 0), Vector2(0, h), ul_circ, bl_circ, left)
 	maybe_line.call(Vector2(w, 0), Vector2(w, h), ur_circ, br_circ, right)
-
 
