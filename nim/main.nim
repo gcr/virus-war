@@ -10,7 +10,7 @@ import deques
 import random
 
 type 
-  Cell = enum 
+  Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
     Empty = "\e[1;37m.\e[0m"
     LiveA = "\e[1;31mA\e[0m"
@@ -18,17 +18,17 @@ type
     LiveB = "\e[1;32mB\e[0m"
     LockedB = "\e[3;32mb\e[0m"
     Invalid = "!"
-  Player = enum A, B
-  Loc = tuple
-    r: uint8
-    c: uint8
+  Player* = enum A, B
+  Loc* = tuple
+    r*: uint8
+    c*: uint8
   # Cells change ownership.
   Board* = object
-    width: uint8
-    height: uint8
+    width*: uint8
+    height*: uint8
     board: seq[Cell]
-  LocSet = set[uint16]
-  LocDeque = object
+  LocSet* = set[uint16]
+  LocDeque* = object
     data: array[81, Loc]
     first: int16 = 0
     last: int16 = 0
@@ -37,18 +37,18 @@ type
 # Sets of locations
 proc ravel(l: Loc): uint16 = uint16(l.r) * 16 + uint16(l.c)
 proc hash(l: Loc): Hash = l.r.int * 16 + l.c.int
-proc incl(lset: var LocSet, l: Loc) = lset.incl l.ravel
-proc contains(lset: var LocSet, l: Loc): bool = l.ravel in lset
+proc incl*(lset: var LocSet, l: Loc) = lset.incl l.ravel
+proc contains*(lset: var LocSet, l: Loc): bool = l.ravel in lset
 
 # Small queue of locations
-proc len(ld: LocDeque): int = ld.last - ld.first
-proc popFirst(ld: var LocDeque): Loc =
+proc len*(ld: LocDeque): int = ld.last - ld.first
+proc popFirst*(ld: var LocDeque): Loc =
     result = ld.data[ld.first]
     ld.first += 1
-proc addLast(ld: var LocDeque, l: Loc) =
+proc addLast*(ld: var LocDeque, l: Loc) =
     ld.data[ld.last] = l
     ld.last += 1
-proc makeDeque(arr: seq[Loc]): LocDeque =
+proc makeDeque*(arr: seq[Loc]): LocDeque =
     var ld = LocDeque(data: arrayWith((255'u8, 255'u8), 81),
                       first: 0,
                       last: 0)
@@ -57,46 +57,46 @@ proc makeDeque(arr: seq[Loc]): LocDeque =
     return ld
 
 
-proc `~>`(c: Cell, t: Player): Cell =
+proc `~>`*(c: Cell, t: Player): Cell =
     if (c,t) == (Cell.Empty, Player.A): Cell.LiveA
     elif (c,t) == (Cell.Empty, Player.B): Cell.LiveB
     elif (c,t) == (Cell.LiveA, Player.B): Cell.LockedB
     elif (c,t) == (Cell.LiveB, Player.A): Cell.LockedA
     else: Cell.Invalid
-proc ownedByA(c:Cell): bool = (c == Cell.LiveA or c == Cell.LockedA)
-proc ownedByB(c:Cell): bool = (c == Cell.LiveB or c == Cell.LockedB)
-proc ownedBy(t: Player): (Cell)->bool =
+proc ownedByA*(c:Cell): bool = (c == Cell.LiveA or c == Cell.LockedA)
+proc ownedByB*(c:Cell): bool = (c == Cell.LiveB or c == Cell.LockedB)
+proc ownedBy*(t: Player): (Cell)->bool =
     case t:
     of Player.A: ownedByA
     of Player.B: ownedByB
-proc ownedBy(c: Cell, t: Player): bool = ownedBy(t)(c)
-proc isLive(c: Cell): bool = (c == Cell.LiveA or c== Cell.LiveB)
-proc isLocked(c: Cell): bool = (c == Cell.LockedA or c == Cell.LockedB)
-proc isValid(c: Cell): bool = (c in [Cell.Empty, Cell.LiveA, Cell.LiveB, Cell.LockedA, Cell.LockedB])
-proc other(t: Player):Player =
+proc ownedBy*(c: Cell, t: Player): bool = ownedBy(t)(c)
+proc isLive*(c: Cell): bool = (c == Cell.LiveA or c== Cell.LiveB)
+proc isLocked*(c: Cell): bool = (c == Cell.LockedA or c == Cell.LockedB)
+proc isValid*(c: Cell): bool = (c in [Cell.Empty, Cell.LiveA, Cell.LiveB, Cell.LockedA, Cell.LockedB])
+proc other*(t: Player):Player =
      if t==Player.A: Player.B
      else: Player.A
-proc isCapturableBy(c: Cell, p: Player): bool =
+proc isCapturableBy*(c: Cell, p: Player): bool =
     c.isLive and c.ownedBy(p.other) or c == Cell.Empty
 
-proc `[]`(b: Board, r: Loc): Cell =
+proc `[]`*(b: Board, r: Loc): Cell =
     b.board[r.r*b.width + r.c]
-proc `[]=`(b: var Board, r: Loc, v:Cell) =
+proc `[]=`*(b: var Board, r: Loc, v:Cell) =
     b.board[r.r*b.width + r.c] = v
-proc `[]=`(b: var Board, r: uint8, c:uint8, v:Cell) =
+proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) =
     b[(r,c)] = v
-proc `$`(b: Board): string =
+proc `$`*(b: Board): string =
     for r in uint8(0)..<b.height:
         result &= join(b.board[r*b.width ..< (r+1)*b.width], " ")
         result &= "\n"
-proc `+`(a: Loc, b: Loc): Loc =
+proc `+`*(a: Loc, b: Loc): Loc =
     return (a.r+b.r, a.c+b.c)
-proc `+`(a: Loc, b: (int, int)): Loc =
+proc `+`*(a: Loc, b: (int, int)): Loc =
     return (a.r+uint8(b[0]), a.c+uint8(b[1])) # two's complement?
-proc contains(b: Board, c: Loc): bool =
+proc contains*(b: Board, c: Loc): bool =
     result = (c.r >= 0 and c.r < b.height and
               c.c >= 0 and c.c < b.width)
-proc board(width: uint8, height: uint8): Board =
+proc board*(width: uint8, height: uint8): Board =
     var board = Board(
         width: width,
         height: height,
@@ -105,7 +105,7 @@ proc board(width: uint8, height: uint8): Board =
     board[0,width-1] = Cell.LiveB
     board[height-1, 0] = Cell.LiveA
     return board
-iterator neighbors(board: Board, c: Loc): Loc =
+iterator neighbors*(board: Board, c: Loc): Loc =
     for dc in [-1, 0, 1]:
         for dr in [-1,0,1]:
             if dr != 0 or dc != 0:
@@ -121,11 +121,11 @@ iterator neighbors(board: Board, c: Loc): Loc =
 #    if c+( 1,-1) in board: yield c+( 1, -1)
 #    if c+( 1, 0) in board: yield c+( 1,  0)
 #    if c+( 1, 1) in board: yield c+( 1,  1)
-iterator items(b:Board): Loc =
+iterator items*(b:Board): Loc =
     for r in 0'u8..<b.width:
         for c in 0'u8..<b.height:
             yield (r.uint8,c.uint8)
-iterator liveCellGroups(board: Board, t: Player): Loc =
+iterator liveCellGroups*(board: Board, t: Player): Loc =
     #pred: (Cell)->bool, horizon: var Deque[Loc]): Loc =
     var seen: LocSet
     var horizon: Deque[Loc]
@@ -147,7 +147,7 @@ iterator liveCellGroups(board: Board, t: Player): Loc =
                     addedToHorizon.incl n
         seen.incl loc
 
-iterator possibleMovesFor(board: Board, player: Player): Loc =
+iterator possibleMovesFor*(board: Board, player: Player): Loc =
     var seen: LocSet
     for loc in board.liveCellGroups player:
         seen.incl loc
@@ -157,7 +157,7 @@ iterator possibleMovesFor(board: Board, player: Player): Loc =
                     yield neighbor
             seen.incl neighbor
     
-proc withPlay(b: Board, loc: Loc, player: Player): Board =
+proc withPlay*(b: Board, loc: Loc, player: Player): Board =
     var newBoard:Board = b
     newBoard[loc] = newBoard[loc] ~> player
     return newBoard
