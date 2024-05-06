@@ -28,15 +28,33 @@ type
     height: uint8
     board: seq[Cell]
   LocSet = set[uint16]
+  LocDeque = object
+    data: array[81, Loc]
+    first: int16 = 0
+    last: int16 = 0
+    
 
 # Sets of locations
 proc ravel(l: Loc): uint16 = uint16(l.r) * 16 + uint16(l.c)
 proc hash(l: Loc): Hash = l.r.int * 16 + l.c.int
 proc incl(lset: var LocSet, l: Loc) = lset.incl l.ravel
 proc contains(lset: var LocSet, l: Loc): bool = l.ravel in lset
-iterator to_locs(lset: var LocSet): Loc =
-    for loc in lset:
-        yield (uint8(loc div 16), uint8(loc mod 16))
+
+# Small queue of locations
+proc len(ld: LocDeque): int = ld.last - ld.first
+proc popFirst(ld: var LocDeque): Loc =
+    result = ld.data[ld.first]
+    ld.first += 1
+proc addLast(ld: var LocDeque, l: Loc) =
+    ld.data[ld.last] = l
+    ld.last += 1
+proc makeDeque(arr: seq[Loc]): LocDeque =
+    var ld = LocDeque(data: arrayWith((255'u8, 255'u8), 81),
+                      first: 0,
+                      last: 0)
+    for x in arr:
+        ld.addLast x
+    return ld
 
 
 proc `~>`(c: Cell, t: Player): Cell =
@@ -110,9 +128,13 @@ iterator items(b:Board): Loc =
 iterator liveCellGroups(board: Board, t: Player): Loc =
     #pred: (Cell)->bool, horizon: var Deque[Loc]): Loc =
     var seen: LocSet
-    var horizon: Deque[Loc] = board.items.toSeq.filterIt(
-        board[it].isLive and board[it].ownedBy t
-    ).toDeque
+    var horizon: Deque[Loc]
+    var addedToHorizon: LocSet
+    for loc in board:
+     if board[loc].isLive and board[loc].ownedBy t:
+        horizon.addLast loc
+        addedToHorizon.incl loc
+
     while horizon.len > 0:
         let
             loc: Loc = horizon.popFirst
@@ -120,8 +142,9 @@ iterator liveCellGroups(board: Board, t: Player): Loc =
         if loc notin seen and cell.ownedBy t:
             yield loc
             for n in board.neighbors(loc):
-                if n notin seen:
+                if n notin seen and n notin addedToHorizon:
                     horizon.addLast n
+                    addedToHorizon.incl n
         seen.incl loc
 
 iterator possibleMovesFor(board: Board, player: Player): Loc =
@@ -145,13 +168,12 @@ proc withPlay(b: Board, loc: Loc, player: Player): Board =
 #    for cref in board:
         #if cref.isLive and cref.ownedBy player:
 
-
 if true:
     randomize()
     var
         depths: seq[int]
         choices: seq[int]
-        n_trials = 200
+        n_trials = 2500
     for trial in 0..<n_trials:
         var
             b2 = board(9,9)
@@ -160,11 +182,14 @@ if true:
         for depth in 0..<max_depth:
             #echo trial, ", ", depth
             #echo b2
+            #echo "Cell groups for A: ", b2.liveCellGroups(Player.A).toSeq
+            #echo "Cell groups for B: ", b2.liveCellGroups(Player.B).toSeq
             var moves = b2.possibleMovesFor(player).toSeq
             choices.add moves.len
             if moves.len == 0:
                 depths.add depth
-                echo "Trial ", trial, " resulting in depth ", depth
+                if trial mod 100 == 0:
+                    echo "Trial ", trial, " resulting in depth ", depth
                 break
             var move = moves.sample
             b2[move] = b2[move] ~> player
