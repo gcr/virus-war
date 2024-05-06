@@ -49,15 +49,15 @@ func advance_state(node: VirusButton) -> void:
 	match [turn, node.state]:
 		[Turn.A, node.State.BLANK]:  node.state = node.State.A
 		[Turn.A, node.State.A]:      node.state = node.State.BLANK
-		[Turn.A, node.State.B]:      node.state = node.State.DEAD_B
-		[Turn.A, node.State.DEAD_A]: node.state = node.State.DEAD_A
-		[Turn.A, node.State.DEAD_B]: node.state = node.State.B
+		[Turn.A, node.State.B]:      node.state = node.State.DEAD_A
+		[Turn.A, node.State.DEAD_A]: node.state = node.State.B
+		[Turn.A, node.State.DEAD_B]: node.state = node.State.DEAD_B
 
 		[Turn.B, node.State.BLANK]:  node.state = node.State.B
-		[Turn.B, node.State.A]:      node.state = node.State.DEAD_A
+		[Turn.B, node.State.A]:      node.state = node.State.DEAD_B
 		[Turn.B, node.State.B]:      node.state = node.State.BLANK
-		[Turn.B, node.State.DEAD_A]: node.state = node.State.A
-		[Turn.B, node.State.DEAD_B]: node.state = node.State.DEAD_B
+		[Turn.B, node.State.DEAD_A]: node.state = node.State.DEAD_A
+		[Turn.B, node.State.DEAD_B]: node.state = node.State.A
 
 	# Redraw the nodes
 	for b in %GridContainer.get_children():
