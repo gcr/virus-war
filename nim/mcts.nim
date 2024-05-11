@@ -60,7 +60,7 @@ proc next*(state: State, a: Action): State =
 type
     MCTSNode* = object
         descendants: seq[Action]
-        #isExpanded: seq[bool]
+        definitelyExpanded: bool
         nWinsA: uint
         nWinsB: uint
         nVisits: uint
@@ -78,23 +78,38 @@ proc score*(node: MCTSNode, parent_n: float, player: Player): float =
         result = node.nWinsB.float / (node.nVisits.float)
     # exploration
     result += c_param * sqrt(2.0 * ln(parent_n) / (node.nVisits.float))
-    
-proc isFullyExpanded*(forest: MCTSForest, state: State): bool =
+
+proc isTerminal*(node: MCTSNode): bool = node.descendants.len == 0
+
+proc isFullyExpanded*(forest: var MCTSForest, state: State): bool =
+    if forest[state].definitelyExpanded:
+        return true
     for action in forest[state].descendants:
         if state.next(action) notin forest:
             return false
+    forest[state].definitelyExpanded = true
     return true
 
 
 proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: float): State =
+    #echo "Calling selectANdExpand:"
+    #if state in forest:
+    #    dump forest[state]
+    #    dump forest[state].nExpanded
     result = state
     var parent_state: State = state
     while result in forest:
+        #echo "- result in forest:", forest[result]
+        #echo "- ", forest[result].nExpanded
+        #var count = 0
+        #for act in forest[result].descendants:
+        #    if result.next(act) in forest:
+        #        count += 1
+        #echo "- Actually in forest: ", count
         # update parent
         forest[result].parent = parent_state
         parent_state = result
-        if result.isTerminal:
-            #echo "WARNING: returning terminal state"
+        if forest[result].isTerminal:
             break
         if forest.isFullyExpanded(result):
             var
@@ -124,6 +139,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
             #    echo parent_state
         else:
             # select one of the unexpanded nodes
+            #forest[result].nExpanded += 1
             var possible_actions = forest[result].descendants.filterIt(
                 result.next(it) notin forest
             )
@@ -137,15 +153,16 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
             nWinsB: 0,
             nVisits: 0,
             parent: parent_state,
+            #nExpanded: 0,
         )
 
 proc rollout*(forest: var MCTSForest, startState: State) =
     var state: State = startState
-    while not state.isTerminal:
-        # Get actions
-        var action = state.actions.toSeq.sample
-        #rolloutState.board[action] ~> rolloutState.whoseTurn
-        state = state.next action
+    while true:
+        var actions = state.actions.toSeq
+        if actions.len == 0: # terminal state
+            break
+        state = state.next actions.sample
     # Update nodes
     var winner = state.whoseTurn.other
     state = startState
@@ -226,6 +243,7 @@ when isMainModule:
             current_state = current_state.next best_action
         else:
             echo "Your turn!"
+            break
             var best_action = mcts(current_state)
             current_state = current_state.next best_action
             #current_state = current_state.next readLocFromStdin(current_state.board, Player.B)

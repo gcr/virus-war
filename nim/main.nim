@@ -8,7 +8,11 @@ import sugar
 import sets
 import deques
 import random
+import tables
 
+const 
+    maxSize = 16
+    maxLocDeque = 81
 type 
   Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
@@ -19,44 +23,6 @@ type
     LockedB = "\e[3;32mb\e[0m"
     Invalid = "!"
   Player* = enum A, B
-  Loc* = tuple
-    r: uint8
-    c: uint8
-  # Cells change ownership.
-  Board* = object
-    width*: uint8
-    height*: uint8
-    board: seq[Cell]
-  LocSet* = set[uint16]
-  LocDeque* = object
-    data: array[81, Loc]
-    first: int16 = 0
-    last: int16 = 0
-    
-
-# Sets of locations
-proc ravel(l: Loc): uint16 = uint16(l.r) * 16 + uint16(l.c)
-proc hash(l: Loc): Hash = l.r.int * 16 + l.c.int
-proc incl*(lset: var LocSet, l: Loc) = lset.incl l.ravel
-proc contains*(lset: var LocSet, l: Loc): bool = l.ravel in lset
-
-# Small queue of locations
-proc len*(ld: LocDeque): int = ld.last - ld.first
-proc popFirst*(ld: var LocDeque): Loc =
-    result = ld.data[ld.first]
-    ld.first += 1
-proc addLast*(ld: var LocDeque, l: Loc) =
-    ld.data[ld.last] = l
-    ld.last += 1
-proc makeDeque*(arr: seq[Loc]): LocDeque =
-    var ld = LocDeque(data: arrayWith((255'u8, 255'u8), 81),
-                      first: 0,
-                      last: 0)
-    for x in arr:
-        ld.addLast x
-    return ld
-
-
 proc `~>`*(c: Cell, t: Player): Cell =
     if (c,t) == (Cell.Empty, Player.A): Cell.LiveA
     elif (c,t) == (Cell.Empty, Player.B): Cell.LiveB
@@ -79,6 +45,15 @@ proc other*(t: Player):Player =
 proc isCapturableBy*(c: Cell, p: Player): bool =
     c.isLive and c.ownedBy(p.other) or c == Cell.Empty
 
+type
+  Loc* = tuple
+    r: uint8
+    c: uint8
+  # Cells change ownership.
+  Board* = object
+    width*: uint8
+    height*: uint8
+    board: seq[Cell]
 proc `[]`*(b: Board, r: Loc): Cell =
     b.board[r.r*b.width + r.c]
 proc `[]=`*(b: var Board, r: Loc, v:Cell) =
@@ -135,10 +110,44 @@ iterator items*(b:Board): Loc =
     for r in 0'u8..<b.width:
         for c in 0'u8..<b.height:
             yield (r.uint8,c.uint8)
+
+# Sets of locations
+#type LocSet* = set[uint16]
+type LocSet* = array[maxSize*maxSize, bool]
+proc ravel(l: Loc): uint16 = uint16(l.r) * maxSize + uint16(l.c)
+proc hash(l: Loc): Hash = l.r.int * maxSize + l.c.int
+#proc incl*(lset: var LocSet, l: Loc) = lset.incl l.ravel
+#proc contains*(lset: var LocSet, l: Loc): bool = l.ravel in lset
+proc incl*(lset: var LocSet, l: Loc) = lset[l.ravel] = true
+proc contains*(lset: var LocSet, l: Loc): bool = lset[l.ravel]
+
+# Small queue of locations
+type LocDeque* = object
+    data: array[maxLocDeque, Loc]
+    first: int16 = 0
+    last: int16 = 0
+proc len*(ld: LocDeque): int = ld.last - ld.first
+proc popFirst*(ld: var LocDeque): Loc =
+    result = ld.data[ld.first]
+    ld.first += 1
+proc addLast*(ld: var LocDeque, l: Loc) =
+    ld.data[ld.last] = l
+    ld.last += 1
+proc makeDeque*(arr: seq[Loc]): LocDeque =
+    var ld = LocDeque(data: arrayWith((255'u8, 255'u8), maxLocDeque),
+                      first: 0,
+                      last: 0)
+    for x in arr:
+        ld.addLast x
+    return ld
+
+
+#var COUNTED_BOARD_TABLES*: CountTable[Board]
 iterator liveCellGroups*(board: Board, t: Player): Loc =
+    #COUNTED_BOARD_TABLES.inc board
     #pred: (Cell)->bool, horizon: var Deque[Loc]): Loc =
     var seen: LocSet
-    var horizon: Deque[Loc]
+    var horizon: LocDeque
     var addedToHorizon: LocSet
     for loc in board:
      if board[loc].isLive and board[loc].ownedBy t:
@@ -172,39 +181,6 @@ proc withPlay*(b: Board, loc: Loc, player: Player): Board =
     newBoard[loc] = newBoard[loc] ~> player
     return newBoard
 
-# TODO: remove allocations here
-# TODO: rethink this, iterators can't be recursive.
-## Give all sets of possible move triplets
-iterator possibleMoveTriplesFor*(board: Board, player: Player): (Loc, Loc, Loc) =
-    var seen: HashSet[Board]
-    seen.incl board
-    for loc1 in board.possibleMovesFor player:
-        let b2 = board.withPlay(loc1, player)
-        if b2 notin seen:
-            seen.incl b2
-            for loc2 in b2.possibleMovesFor player:
-                let b3 = b2.withPlay(loc2, player)
-                if b3 notin seen:
-                    seen.incl b3
-                    for loc3 in b3.possibleMovesFor player:
-                        let b4 = b3.withPlay(loc3, player)
-                        if b4 notin seen:
-                            seen.incl b4
-                            yield (loc1, loc2, loc3)
-
-
-proc withPlays*(board: Board, locs: (Loc,Loc,Loc), player: Player): Board =
-    result = board
-    result[locs[0]] = result[locs[0]] ~> player
-    result[locs[1]] = result[locs[1]] ~> player
-    result[locs[2]] = result[locs[2]] ~> player
-
-#iterator liveCells(board: Board, player: Player): Loc =
-#    var seen: HashSet[Loc]
-#    var horizon: seq[Loc]
-#    for cref in board:
-        #if cref.isLive and cref.ownedBy player:
-
 when isMainModule:
     randomize()
     var
@@ -217,10 +193,6 @@ when isMainModule:
             max_depth = 900
             player = Player.A
         for depth in 0..<max_depth:
-            #echo trial, ", ", depth
-            #echo b2
-            #echo "Cell groups for A: ", b2.liveCellGroups(Player.A).toSeq
-            #echo "Cell groups for B: ", b2.liveCellGroups(Player.B).toSeq
             var moves = b2.possibleMovesFor(player).toSeq
             choices.add moves.len
             if moves.len == 0:
