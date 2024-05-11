@@ -12,7 +12,7 @@ import random
 type 
   Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
-    Empty = "\e[1;37m.\e[0m"
+    Empty = "\e[1;37m·\e[0m"
     LiveA = "\e[1;31mA\e[0m"
     LockedA = "\e[3;31ma\e[0m"
     LiveB = "\e[1;32mB\e[0m"
@@ -20,8 +20,8 @@ type
     Invalid = "!"
   Player* = enum A, B
   Loc* = tuple
-    r*: uint8
-    c*: uint8
+    r: uint8
+    c: uint8
   # Cells change ownership.
   Board* = object
     width*: uint8
@@ -86,9 +86,19 @@ proc `[]=`*(b: var Board, r: Loc, v:Cell) =
 proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) =
     b[(r,c)] = v
 proc `$`*(b: Board): string =
+    const
+        white = "\e[1;37m"
+        reset = "\e[0m"
+    result = white
+    result &= "   1 2 3 4 5 6 7 8 9 a b c d e f g"[0..< (b.width*2+3)]
+    result &= "\n" & reset
+    const alpha="abcdefghijklmnopqrstuvwxyz"
     for r in uint8(0)..<b.height:
+        result &= white & $alpha[r] & reset & "  "
         result &= join(b.board[r*b.width ..< (r+1)*b.width], " ")
         result &= "\n"
+proc `$`*(l: Loc): string =
+    "abcdefghijklmnopqrstuvwxyz"[l.r] & "123456789abcdefg"[l.c]
 proc `+`*(a: Loc, b: Loc): Loc =
     return (a.r+b.r, a.c+b.c)
 proc `+`*(a: Loc, b: (int, int)): Loc =
@@ -156,11 +166,38 @@ iterator possibleMovesFor*(board: Board, player: Player): Loc =
                 if board[neighbor].isCapturableBy player:
                     yield neighbor
             seen.incl neighbor
-    
+
 proc withPlay*(b: Board, loc: Loc, player: Player): Board =
     var newBoard:Board = b
     newBoard[loc] = newBoard[loc] ~> player
     return newBoard
+
+# TODO: remove allocations here
+# TODO: rethink this, iterators can't be recursive.
+## Give all sets of possible move triplets
+iterator possibleMoveTriplesFor*(board: Board, player: Player): (Loc, Loc, Loc) =
+    var seen: HashSet[Board]
+    seen.incl board
+    for loc1 in board.possibleMovesFor player:
+        let b2 = board.withPlay(loc1, player)
+        if b2 notin seen:
+            seen.incl b2
+            for loc2 in b2.possibleMovesFor player:
+                let b3 = b2.withPlay(loc2, player)
+                if b3 notin seen:
+                    seen.incl b3
+                    for loc3 in b3.possibleMovesFor player:
+                        let b4 = b3.withPlay(loc3, player)
+                        if b4 notin seen:
+                            seen.incl b4
+                            yield (loc1, loc2, loc3)
+
+
+proc withPlays*(board: Board, locs: (Loc,Loc,Loc), player: Player): Board =
+    result = board
+    result[locs[0]] = result[locs[0]] ~> player
+    result[locs[1]] = result[locs[1]] ~> player
+    result[locs[2]] = result[locs[2]] ~> player
 
 #iterator liveCells(board: Board, player: Player): Loc =
 #    var seen: HashSet[Loc]
@@ -168,7 +205,7 @@ proc withPlay*(b: Board, loc: Loc, player: Player): Board =
 #    for cref in board:
         #if cref.isLive and cref.ownedBy player:
 
-if true:
+when isMainModule:
     randomize()
     var
         depths: seq[int]
