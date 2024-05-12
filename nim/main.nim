@@ -11,8 +11,8 @@ import random
 import tables
 
 const 
-    maxSize = 16
-    maxLocDeque = 81
+    maxSize* = 16
+    maxLocDeque* = 195
 type 
   Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
@@ -114,7 +114,7 @@ iterator items*(b:Board): Loc =
 # Sets of locations
 #type LocSet* = set[uint16]
 type LocSet* = array[maxSize*maxSize, bool]
-proc ravel(l: Loc): uint16 = uint16(l.r) * maxSize + uint16(l.c)
+proc ravel*(l: Loc): uint16 = uint16(l.r) * maxSize + uint16(l.c)
 proc hash(l: Loc): Hash = l.r.int * maxSize + l.c.int
 #proc incl*(lset: var LocSet, l: Loc) = lset.incl l.ravel
 #proc contains*(lset: var LocSet, l: Loc): bool = l.ravel in lset
