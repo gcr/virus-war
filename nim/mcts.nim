@@ -125,6 +125,9 @@ proc heuristic*(state: State, action: Action): float =
         nDiff = (nMyMoves - nYourMoves)
     return nDiff.float
 
+proc noHeuristic*(state: State, action: Action): float =
+    return 0.0
+
 proc fastHeuristic*(state: State, action: Action): float =
     if state.board[action].isLive:
         return 10.0

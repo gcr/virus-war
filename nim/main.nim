@@ -60,6 +60,10 @@ proc `[]=`*(b: var Board, r: Loc, v:Cell) =
     b.board[r.r*b.width + r.c] = v
 proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) =
     b[(r,c)] = v
+proc `[]=`*(b: var Board, r: int, c:int, v:Cell) =
+    b[(r.uint8,c.uint8)] = v
+proc `[]=`*(b: var Board, loc: (int, int), v:Cell) =
+    b[loc[0], loc[1]] = v
 proc `$`*(b: Board): string =
     const
         white = "\e[1;37m"

@@ -8,6 +8,7 @@ import strutils
 import streams
 import sugar
 import sequtils
+import gameLog
 
 type RGB = tuple 
     r: float
@@ -81,7 +82,7 @@ proc clear_board(forest: MCTSForest, state: State) =
     stdout.flushFile()
     stderr.flushFile()
 
-proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable): Action =
+proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, move: LoggedMove): Action =
     var i=0
     proc cb(forest: var MCTSForest) =
         if i mod 500 == 0:
@@ -94,6 +95,8 @@ proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: i
                 show_board(forest, current_state)
             write(stdout, fmt "...thinking... {100.0*i.float/n_trials.float:2.1f}%")
             flushFile(stdout)
+
+            move.logTree(forest, current_state, i)
         i += 1
     result = forest.mcts(current_state, n_trials, h, cb)
 
@@ -105,42 +108,57 @@ proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: i
     for action in possible_actions:
         echo " -- ", action, "-> ", forest[current_state.next action]
     echo "\nSelecting ", result, ": ", forest[current_state.next result]
+    move.logChosenSquare $result, n_trials
+
 
 when isMainModule:
     randomize()
     var forest: MCTSForest
     var forestB: MCTSForest
     var current_state = State(
-        board: board(6,6),
+        board: board(9,9),
         whoseTurn: Player.A,
         capturesToMake: 1
     )
-    #current_state.board[5, 1] = Cell.LiveA
-    #current_state.board[1, 4] = Cell.LiveB
-    #current_state.board[2, 3] = Cell.LiveB
-    #current_state.board[3, 2] = Cell.LiveB
+    #for loc in [(10, 1)]:
+    #    current_state.board[loc] = Cell.LiveA
+    #for loc in [(0, 9), (1,8), (2,7)]:
+    #    current_state.board[loc] = Cell.LiveB
 
-    #current_state.board[0, 4] = Cell.LiveB
-    #current_state.board[4, 1] = Cell.LiveA
-    #current_state.board[3, 2] = Cell.LiveA
-    #current_state.board[2, 3] = Cell.LiveA
+    var game = logGame(current_state,
+    "A: slow heuristic and fast rollout, B: NO select heuristic and fast rollout"
+    )
 
     #echo "You're player ", Cell.LiveB
     #if current_state.whoseTurn == Player.B:
     #    echo "You have the first move."
+    var moveNum = 0
     while true:
         echo current_state
+        var move = game.logMove(moveNum, current_state)
+        moveNum += 1
         if current_state.isTerminal:
             echo "...but {current_state.whoseTurn} can't move!".fmt
             echo "Good game! {current_state.whoseTurn.other} wins!".fmt
+            game.logWinner current_state.whoseTurn.other
             break
         if current_state.whoseTurn == Player.A:
             #echo "My turn!"
-            var best_action = forest.mctsWithFeedback(current_state, 100000, fastHeuristic)
+            var best_action = forest.mctsWithFeedback(
+                current_state,
+                10000,
+                fastHeuristic,
+                move,
+            )
             current_state = current_state.next best_action
         else:
             #echo "Your turn!"
             #var loc = current_state.board.readLocFromStdin(Player.B)
             #current_state = current_state.next loc
-            var best_action = forestB.mctsWithFeedback(current_state, 100000, heuristic)
+            var best_action = forest.mctsWithFeedback(
+                current_state,
+                10000,
+                noHeuristic,
+                move,
+            )
             current_state = current_state.next best_action
