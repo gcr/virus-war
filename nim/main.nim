@@ -147,38 +147,27 @@ proc makeDeque*(arr: seq[Loc]): LocDeque =
 
 
 #var COUNTED_BOARD_TABLES*: CountTable[Board]
-iterator liveCellGroups*(board: Board, t: Player): Loc =
+#proc liveCellGroups*(board: Board, t: Player): LocSet =
+iterator possibleMovesFor*(board: Board, player: Player): Loc =
     #COUNTED_BOARD_TABLES.inc board
     #pred: (Cell)->bool, horizon: var Deque[Loc]): Loc =
     var seen: LocSet
     var horizon: LocDeque
-    var addedToHorizon: LocSet
+
     for loc in board:
-     if board[loc].isLive and board[loc].ownedBy t:
+     if board[loc].isLive and board[loc].ownedBy player:
         horizon.addLast loc
-        addedToHorizon.incl loc
+        seen.incl loc
 
     while horizon.len > 0:
-        let
-            loc: Loc = horizon.popFirst
-            cell = board[loc]
-        if loc notin seen and cell.ownedBy t:
-            yield loc
-            for n in board.neighbors(loc):
-                if n notin seen and n notin addedToHorizon:
+        let loc: Loc = horizon.popFirst
+        for n in board.neighbors(loc):
+            if n notin seen:
+                seen.incl n
+                if board[n].ownedBy player:
                     horizon.addLast n
-                    addedToHorizon.incl n
-        seen.incl loc
-
-iterator possibleMovesFor*(board: Board, player: Player): Loc =
-    var seen: LocSet
-    for loc in board.liveCellGroups player:
-        seen.incl loc
-        for neighbor in board.neighbors loc:
-            if neighbor notin seen:
-                if board[neighbor].isCapturableBy player:
-                    yield neighbor
-            seen.incl neighbor
+                if board[n].isCapturableBy player:
+                    yield n
 
 proc withPlay*(b: Board, loc: Loc, player: Player): Board =
     var newBoard:Board = b
