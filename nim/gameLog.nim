@@ -100,7 +100,7 @@ proc logTree*(move: LoggedMove, forest: MCTSForest, state: mcts.State, playoutNu
     for action in forest[state].descendants:
         if state.next(action) notin forest:
             continue
-        var nextNode: MCTSNode = forest[state.next action]
+        var nextNode: MCTSNode = forest[state.next action][]
         var tree = LoggedTreeSearch(
             move: move,
             playouts: playoutNum,

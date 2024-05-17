@@ -52,7 +52,7 @@ proc show_board(forest: MCTSForest, state: State) =
     result = white
     result &= "   1 2 3 4 5 6 7 8 9 a b c d e f g"[0..< (b.width*2+3)]
     let pWin = forest[state].descendants.mapIt(
-        forest[state.next it]
+        forest[state.next it][]
     ).mapIt(it.winFraction(state.whoseTurn)).max
     result &= " p(win for {state.whoseTurn}) = {pwin:0.3f}".fmt
     let avgDepth = forest[state].depthSum.float / forest[state].nVisits.float
@@ -63,7 +63,7 @@ proc show_board(forest: MCTSForest, state: State) =
         for c in uint8(0)..<b.width:
             if (r,c) in forest[state].descendants:
                 let node = forest[state.next (r,c)]
-                result &= bg(nodeToBgcolor(forest, node, forest[state]))
+                result &= bg(nodeToBgcolor(forest, node[], forest[state][]))
             result &= $b[(r,c)] & " "
         if r == 0:   
             result &= white & " brain strength = {forest[state].nVisits} kg".fmt
@@ -103,11 +103,11 @@ proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: i
     stdout.write("\r")
     stdout.flushFile()
     echo "Pondered to average depth of {forest[current_state].depthSum.float / forest[current_state].nVisits.float:.2f}".fmt
-    dump forest[current_state]
+    dump forest[current_state][]
     var possible_actions = forest[current_state].descendants.toSeq
     for action in possible_actions:
-        echo " -- ", action, "-> ", forest[current_state.next action]
-    echo "\nSelecting ", result, ": ", forest[current_state.next result]
+        echo " -- ", action, "-> ", forest[current_state.next action][]
+    echo "\nSelecting ", result, ": ", forest[current_state.next result][]
     move.logChosenSquare $result, n_trials
 
 
