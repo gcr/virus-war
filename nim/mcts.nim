@@ -16,6 +16,7 @@ import random
 import strformat
 import rdstdin
 import math
+import bitmask
 
 
 type
@@ -39,14 +40,11 @@ proc `$`*(s: State): string =
     if s.capturesToMake > 1:
         result &= "s"
 
-iterator actions*(state: State): Action =
-    for loc in state.board.possibleMovesFor(state.whoseTurn):
-        yield loc
+proc actions*(state: State): Bitmask =
+    state.board.possibleMovesFor(state.whoseTurn)
 
 proc isTerminal*(state: State): bool =
-    for action in state.actions:
-        return false
-    return true
+    return state.actions.len == 0
 
 proc next*(state: State, a: Action): State =
     result = state
@@ -112,7 +110,7 @@ type HeuristicCallable* = (State, Action) -> float
 
 var NMOVES_MEMOIZED: Table[(Board, Player), int]
 proc memoizedNMoves(b: Board, p: Player): int =
-    return b.possibleMovesFor(p).toSeq.len
+    return b.possibleMovesFor(p).len
     if (b,p) notin NMOVES_MEMOIZED:
         NMOVES_MEMOIZED[(b, p)] = b.possibleMovesFor(p).toSeq.len
     return NMOVES_MEMOIZED[(b,p)]
@@ -196,19 +194,20 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
 proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
     var state: State = startState
     while true:
-        var actions = state.actions.toSeq
+        var actions = state.actions
         if actions.len == 0: # terminal state
             break
-        let capture_actions = actions.filterIt(state.board[it].isLive)
-        if capture_actions.len > 0 and rand(1.0) > 0.1:
-            state = state.next capture_actions.sample
+        state = state.next actions.sample
+        #let capture_actions = actions.filterIt(state.board[it].isLive)
+        #if capture_actions.len > 0 and rand(1.0) > 0.1:
+        #    state = state.next capture_actions.sample
         #if rand(1.0) > 0.1:
         #    actions.shuffle
         #    let best_idx = actions.mapIt(h(state, it)).maxIndex
         #    state = state.next actions[best_idx]
-        else:
-            # random
-            state = state.next actions.sample
+        #else:
+        #    # random
+        #    state = state.next actions.sample
     # Update nodes
     var winner = state.whoseTurn.other
     state = startState
@@ -247,7 +246,7 @@ proc mcts*(forest: var MCTSForest, current_state: State, n_trials: int = 100000,
         let state = forest.selectAndExpand(current_state, i.float, h)
         forest.rollout(state, h)
         cb(forest)
-    var possible_actions = forest[current_state].descendants.toSeq
+    var possible_actions = forest[current_state].descendants
     var best_idx = possible_actions.mapIt(
         forest[current_state.next it].nVisits
     ).maxIndex
@@ -264,10 +263,10 @@ proc mcts_verbose*(forest: var MCTSForest, current_state: State, n_trials: int =
     result = mcts(forest, current_state, n_trials, heuristic, cb)
     stdout.write("\r")
     dump forest[current_state][]
-    var possible_actions = forest[current_state].descendants.toSeq
-    #for action in possible_actions:
-    #    echo " -- ", action, "-> ", forest[current_state.next action][]
-    #echo "\nSelecting ", result, ": ", forest[current_state.next result][]
+    var possible_actions = forest[current_state].descendants
+    for action in possible_actions:
+        echo " -- ", action, "-> ", forest[current_state.next action][]
+    echo "\nSelecting ", result, ": ", forest[current_state.next result][]
         
 when isMainModule:
     randomize()

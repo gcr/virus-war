@@ -9,6 +9,7 @@ import sets
 import deques
 import random
 import tables
+import bitmask
 
 const 
     maxSize* = 16
@@ -53,11 +54,24 @@ type
   Board* = object
     width*: uint8
     height*: uint8
-    board: seq[Cell]
+    
+    liveA: Bitmask
+    liveB: Bitmask
+    lockedA: Bitmask
+    lockedB: Bitmask
+
 proc `[]`*(b: Board, r: Loc): Cell =
-    b.board[r.r*b.width + r.c]
+    if b.lockedA[r.r, r.c]: Cell.LockedA
+    elif b.lockedB[r.r, r.c]: Cell.LockedB
+    elif b.liveA[r.r, r.c]: Cell.LiveA
+    elif b.liveB[r.r, r.c]: Cell.LiveB
+    else: Cell.Empty
+proc `[]`*(b:Board, r:uint8, c:uint8): Cell = b[(r,c)]
 proc `[]=`*(b: var Board, r: Loc, v:Cell) =
-    b.board[r.r*b.width + r.c] = v
+    b.liveA[r.r, r.c] = (v == Cell.LiveA)
+    b.lockedA[r.r, r.c] = (v == Cell.LockedA)
+    b.liveB[r.r, r.c] = (v == Cell.LiveB)
+    b.lockedB[r.r, r.c] = (v == Cell.LockedB)
 proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) =
     b[(r,c)] = v
 proc `[]=`*(b: var Board, r: int, c:int, v:Cell) =
@@ -74,7 +88,8 @@ proc `$`*(b: Board): string =
     const alpha="abcdefghijklmnopqrstuvwxyz"
     for r in uint8(0)..<b.height:
         result &= white & $alpha[r] & reset & "  "
-        result &= join(b.board[r*b.width ..< (r+1)*b.width], " ")
+        for c in uint8(0)..<b.width:
+            result &= $b[r, c] & " "
         result &= "\n"
 proc `$`*(l: Loc): string =
     "abcdefghijklmnopqrstuvwxyz"[l.r] & "123456789abcdefg"[l.c]
@@ -88,8 +103,7 @@ proc contains*(b: Board, c: Loc): bool =
 proc board*(width: uint8, height: uint8): Board =
     var board = Board(
         width: width,
-        height: height,
-        board: (uint8(0)..<width * height).mapIt(Cell.Empty)
+        height: height
     )
     board[0,width-1] = Cell.LiveB
     board[height-1, 0] = Cell.LiveA
@@ -115,68 +129,28 @@ iterator items*(b:Board): Loc =
         for c in 0'u8..<b.height:
             yield (r.uint8,c.uint8)
 
-# Sets of locations
-#type LocSet* = set[uint16]
-type LocSet* = array[maxSize*maxSize, bool]
-proc ravel*(l: Loc): uint16 = uint16(l.r) * maxSize + uint16(l.c)
-proc hash(l: Loc): Hash = l.r.int * maxSize + l.c.int
-#proc incl*(lset: var LocSet, l: Loc) = lset.incl l.ravel
-#proc contains*(lset: var LocSet, l: Loc): bool = l.ravel in lset
-proc incl*(lset: var LocSet, l: Loc) = lset[l.ravel] = true
-proc contains*(lset: var LocSet, l: Loc): bool = lset[l.ravel]
-
-# Small queue of locations
-type LocDeque* = object
-    data: array[maxLocDeque, Loc]
-    first: int16 = 0
-    last: int16 = 0
-proc len*(ld: LocDeque): int = ld.last - ld.first
-proc popFirst*(ld: var LocDeque): Loc =
-    result = ld.data[ld.first]
-    ld.first += 1
-proc addLast*(ld: var LocDeque, l: Loc) =
-    ld.data[ld.last] = l
-    ld.last += 1
-proc makeDeque*(arr: seq[Loc]): LocDeque =
-    var ld = LocDeque(data: arrayWith((255'u8, 255'u8), maxLocDeque),
-                      first: 0,
-                      last: 0)
-    for x in arr:
-        ld.addLast x
-    return ld
-
-
-#var COUNTED_BOARD_TABLES*: CountTable[Board]
-#proc liveCellGroups*(board: Board, t: Player): LocSet =
-iterator possibleMovesFor*(board: Board, player: Player): Loc =
-    #COUNTED_BOARD_TABLES.inc board
-    #pred: (Cell)->bool, horizon: var Deque[Loc]): Loc =
-    var seen: LocSet
-    var horizon: LocDeque
-
-    for loc in board:
-     if board[loc].isLive and board[loc].ownedBy player:
-        horizon.addLast loc
-        seen.incl loc
-
-    while horizon.len > 0:
-        let loc: Loc = horizon.popFirst
-        for n in board.neighbors(loc):
-            if n notin seen:
-                seen.incl n
-                if board[n].ownedBy player:
-                    horizon.addLast n
-                if board[n].isCapturableBy player:
-                    yield n
-
-proc withPlay*(b: Board, loc: Loc, player: Player): Board =
-    var newBoard:Board = b
-    newBoard[loc] = newBoard[loc] ~> player
-    return newBoard
+proc possibleMovesFor*(board: Board, player: Player): Bitmask =
+    let deadCells = (if player==Player.A: board.lockedA else: board.lockedB)
+    let liveCells = (if player==Player.A: board.liveA else: board.liveB)
+    let otherDeadCells = (if player==Player.A: board.lockedB else: board.lockedA)
+    # tmp represents whichever cells border live groups
+    result = liveCells
+    for i in 0..result.high:
+        result.dilate
+        result.setIntersect deadCells
+        result.setUnion liveCells
+    # once we find a fixpoint, we can be done
+    result.dilate
+    result.setSubtract liveCells
+    result.setSubtract deadCells
+    result.setSubtract otherDeadCells
+    result.clipSize(board.width, board.height)
+    
 
 when isMainModule:
     randomize()
     var
+        total_steps = 0
         depths: seq[int]
         choices: seq[int]
         n_trials = 2500
@@ -186,7 +160,8 @@ when isMainModule:
             max_depth = 900
             player = Player.A
         for depth in 0..<max_depth:
-            var moves = b2.possibleMovesFor(player).toSeq
+            total_steps += 1
+            var moves = b2.possibleMovesFor(player)
             choices.add moves.len
             if moves.len == 0:
                 depths.add depth
@@ -198,3 +173,4 @@ when isMainModule:
             player = player.other
 
     echo "Done"
+    echo total_steps
