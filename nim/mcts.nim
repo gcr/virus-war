@@ -65,9 +65,9 @@ type
         nWinsB*: uint
         nVisits*: uint
         depthSum*: int
-        parent*: State
+        parent*: ref MCTSNode
 
-    MCTSForest* = Table[State, MCTSNode]
+    MCTSForest* = Table[State, ref MCTSNode]
 proc `$`*(node: MCTSNode): string =
     fmt "Node(wins for A: {node.nWinsA.float/node.nVisits.float:0.3f}, ratio: {node.nWinsA} / {node.nWinsB} / {node.nVisits}, children: {node.descendants.len})"
 
@@ -111,7 +111,8 @@ proc isFullyExpanded*(forest: var MCTSForest, state: State): bool =
 type HeuristicCallable* = (State, Action) -> float
 
 var NMOVES_MEMOIZED: Table[(Board, Player), int]
-proc memoizedNMoves*(b: Board, p: Player): int =
+proc memoizedNMoves(b: Board, p: Player): int =
+    return b.possibleMovesFor(p).toSeq.len
     if (b,p) notin NMOVES_MEMOIZED:
         NMOVES_MEMOIZED[(b, p)] = b.possibleMovesFor(p).toSeq.len
     return NMOVES_MEMOIZED[(b,p)]
@@ -146,9 +147,9 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
     result = state
     var parent_state: State = state
     while result in forest:
-        forest[result].parent = parent_state
+        forest[result].parent = forest[parent_state]
         parent_state = result
-        if forest[result].isTerminal:
+        if forest[result][].isTerminal:
             break
         if forest.isFullyExpanded(result):
             # use policy to select one of the expanded nodes
@@ -157,7 +158,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
                 best_action = forest[result].descendants[0]
             for action in forest[result].descendants:
                 let nextState = result.next action
-                let node = forest[nextState]
+                let node = forest[nextState][]
                 let whoseTurn = result.whoseTurn
                 var score = score(node, forest[result].nVisits.float, whoseTurn)
 
@@ -187,10 +188,10 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
             #amafScores[action.ravel] += 1
     var actions = result.actions.toSeq
     if result notin forest:
-        forest[result] = MCTSNode(
-            descendants: actions,
-            parent: parent_state,
-        )
+        var node = new MCTSNode
+        forest[result] = node
+        node.descendants = actions
+        node.parent = forest[parent_state]
 
 proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
     var state: State = startState
@@ -199,7 +200,7 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
         if actions.len == 0: # terminal state
             break
         let capture_actions = actions.filterIt(state.board[it].isLive)
-        if capture_actions.len > 0 and rand(1.0) > 0.2:
+        if capture_actions.len > 0 and rand(1.0) > 0.1:
             state = state.next capture_actions.sample
         #if rand(1.0) > 0.1:
         #    actions.shuffle
@@ -212,17 +213,18 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
     var winner = state.whoseTurn.other
     state = startState
     var depth = 0
+    var node = forest[state]
     while true:
         if winner == Player.A:
-            forest[state].nWinsA += 1
+            node.nWinsA += 1
         else:
-            forest[state].nWinsB += 1
-        forest[state].nVisits += 1
-        forest[state].depthSum += depth
+            node.nWinsB += 1
+        node.nVisits += 1
+        node.depthSum += depth
         depth += 1
-        if forest[state].parent == state:
+        if node.parent == node:
             break
-        state = forest[state].parent
+        node = node.parent
 
 proc readLocFromStdin*(board: Board, forPlayer: Player): Loc =
     let str = readLineFromStdin "Pick a move> "
@@ -261,11 +263,11 @@ proc mcts_verbose*(forest: var MCTSForest, current_state: State, n_trials: int =
 
     result = mcts(forest, current_state, n_trials, heuristic, cb)
     stdout.write("\r")
-    dump forest[current_state]
+    dump forest[current_state][]
     var possible_actions = forest[current_state].descendants.toSeq
-    for action in possible_actions:
-        echo " -- ", action, "-> ", forest[current_state.next action]
-    echo "\nSelecting ", result, ": ", forest[current_state.next result]
+    #for action in possible_actions:
+    #    echo " -- ", action, "-> ", forest[current_state.next action][]
+    #echo "\nSelecting ", result, ": ", forest[current_state.next result][]
         
 when isMainModule:
     randomize()
@@ -275,6 +277,12 @@ when isMainModule:
         capturesToMake: 1
     )
     var forest: MCTSForest
+
+    dump sizeof MCTSForest
+    dump sizeof MCTSNode
+    dump sizeof State
+    dump sizeof Board
+    dump sizeof Cell
 
     if current_state.whoseTurn == Player.B:
         echo "You have the first move."
