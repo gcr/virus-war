@@ -288,5 +288,3 @@ when isMainModule:
             break
             var best_action = forest.mcts(current_state, 100000, heuristic)
             current_state = current_state.next best_action
-
-    echo "Flood fills: ", COUNT_FF

@@ -30,7 +30,7 @@ proc hash*(bm: Bitmask): Hash =
         hsh += row.int
     return hsh.hash
 
-{.push inline, checks: off.}
+{.push inline, checks: off, assert: off.}
 #{.push.}
 proc `[]`*(bm: Bitmask, r: uint8, c: uint8): bool =
     return bm[r].shr(nBits-1 - c).bitand(1) == 1
@@ -78,12 +78,12 @@ proc setSubtract*(bm: var Bitmask, other: Bitmask) =
     vst1q_u8(addr bm[8], vec1B)
 
 proc dilate*(bm: var Bitmask) =
-    var vecA: uint16x8 = vld1q_u16(addr bm[0])
-    var vecB: uint16x8 = vld1q_u16(addr bm[8])
-    template dilateCols(x): typeof(bm[0]) = bitor(x, (x.shr 1), (x.shl 1))
     # dilate cols
+    #template dilateCols(x): typeof(bm[0]) = bitor(x, (x.shr 1), (x.shl 1))
     #for i in 0 .. bm.high:
     #    bm[i] = bm[i].dilateCols
+    var vecA: uint16x8 = vld1q_u16(addr bm[0])
+    var vecB: uint16x8 = vld1q_u16(addr bm[8])
     var vecAl = vshlq_n_u16(vecA, 1)
     var vecBl = vshlq_n_u16(vecB, 1)
     var vecAr = vshrq_n_u16(vecA, 1)
@@ -96,12 +96,28 @@ proc dilate*(bm: var Bitmask) =
     vst1q_u16(addr bm[8], vecB)
 
     # dilate rows
-    var prev = bm[0]
-    for i in 0 .. bm.high-1:
-        let tmp = bm[i]
-        bm[i] = bitor(prev, bm[i], bm[i+1])
-        prev = tmp
-    bm[bm.high] = bitor(bm[bm.high], prev)
+    #var prev = bm[0]
+    #for i in 0 .. bm.high-1:
+    #    let tmp = bm[i]
+    #    bm[i] = bitor(prev, bm[i], bm[i+1])
+    #    prev = tmp
+    #bm[bm.high] = bitor(bm[bm.high], prev)
+    var shiftArray: array[18, uint16]
+    for i in 0..bm.high:
+        shiftArray[i+1] = bm[i]
+    shiftArray[0] = bm[0]
+    shiftArray[17] = bm[15]
+    # above
+    var rowsAboveA: uint16x8 = vld1q_u16(addr shiftArray[0])
+    var rowsAboveB: uint16x8 = vld1q_u16(addr shiftArray[8])
+    var rowsBelowA: uint16x8 = vld1q_u16(addr shiftArray[2])
+    var rowsBelowB: uint16x8 = vld1q_u16(addr shiftArray[10])
+    vecA = vorrq_u16(vecA, rowsAboveA)
+    vecB = vorrq_u16(vecB, rowsAboveB)
+    vecA = vorrq_u16(vecA, rowsBelowA)
+    vecB = vorrq_u16(vecB, rowsBelowB)
+    vst1q_u16(addr bm[0], vecA)
+    vst1q_u16(addr bm[8], vecB)
 
 proc len*(bm: Bitmask): int =
     #for row in bm: result += row.popcount
@@ -119,10 +135,8 @@ proc clipSize*(bm: var Bitmask, width: uint8, height: uint8) =
     for r in height.int..bm.high:
         bm[r] = 0
 
-var COUNT_FF* = 0
 
 proc floodFill*(sources: Bitmask, mask: Bitmask): Bitmask =
-    COUNT_FF += 1
     result = sources
     var oldCount = 0
     var newCount = sources.len
