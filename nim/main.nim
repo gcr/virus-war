@@ -127,11 +127,7 @@ proc possibleMovesFor*(board: Board, player: Player): Bitmask =
     let liveCells = board.liveCellsFor player
     let otherDeadCells = board.lockedCellsFor player.other
     # tmp represents whichever cells border live groups
-    result = liveCells
-    for i in 0..result.high:
-        result.dilate
-        result.setIntersect deadCells
-        result.setUnion liveCells
+    result = floodFill(sources = liveCells, mask = deadCells)
     # once we find a fixpoint, we can be done
     result.dilate
     result.setSubtract liveCells

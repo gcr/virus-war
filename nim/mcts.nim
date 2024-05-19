@@ -108,29 +108,21 @@ proc isFullyExpanded*(forest: var MCTSForest, state: State): bool =
 
 type HeuristicCallable* = (State, Action) -> float
 
-var NMOVES_MEMOIZED: Table[(Board, Player), int]
-proc memoizedNMoves(b: Board, p: Player): int =
-    return b.possibleMovesFor(p).len
-    if (b,p) notin NMOVES_MEMOIZED:
-        NMOVES_MEMOIZED[(b, p)] = b.possibleMovesFor(p).toSeq.len
-    return NMOVES_MEMOIZED[(b,p)]
 proc heuristic*(state: State, action: Action): float =
     var 
         proposedState = state.next action
-        nMyMoves = memoizedNMoves(proposedState.board, state.whoseTurn)
-        nYourMoves = memoizedNMoves(proposedState.board, state.whoseTurn.other)
-        #nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).toSeq.len
-        #nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).toSeq.len
+        nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).len
+        nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).len
         nDiff = (nMyMoves - nYourMoves)
-    return nDiff.float
+    return nDiff.float + rand(1.0)
 
 proc noHeuristic*(state: State, action: Action): float =
-    return 0.0
+    return 0.0 + rand(1.0)
 
 proc fastHeuristic*(state: State, action: Action): float =
-    if state.board[action].isLive:
-        return 10.0
-    return 0.0
+    if state.board[action].isLive and rand(1.0) > 0.2:
+        return 1.0 + rand(1.0)
+    return 0.0 + rand(1.0)
     #var 
     #    proposedState = state.next action
     #    nMyMoves = memoizedNMoves(proposedState.board, state.whoseTurn)
@@ -145,20 +137,21 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
     result = state
     var parent_state: State = state
     while result in forest:
-        forest[result].parent = forest[parent_state]
+        let thisNode: ref MCTSNode = forest[result]
+        thisNode.parent = forest[parent_state]
         parent_state = result
-        if forest[result][].isTerminal:
+        if thisNode[].isTerminal:
             break
         if forest.isFullyExpanded(result):
             # use policy to select one of the expanded nodes
             var
                 best_score = -999.0
-                best_action = forest[result].descendants[0]
-            for action in forest[result].descendants:
+                best_action = thisNode.descendants[0]
+            for action in thisNode.descendants:
                 let nextState = result.next action
                 let node = forest[nextState][]
                 let whoseTurn = result.whoseTurn
-                var score = score(node, forest[result].nVisits.float, whoseTurn)
+                var score = score(node, thisNode.nVisits.float, whoseTurn)
 
                 # AMAF?
                 #score += 0.1 * amafScores[action.ravel] / (forest[result].nVisits.float + 1)
@@ -167,7 +160,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
                 #if state.board[action].isLive:
                 #    score += 500.0 / (forest[result].nVisits.float + 1)
                 #    #score += 1.0 / ln(forest[result].nVisits.float + 1)
-                score += h(result, action) / (forest[result].nVisits.float + 1)
+                score += h(result, action) / (thisNode.nVisits.float + 1)
 
                 if best_score < score:
                     best_score = score
@@ -176,7 +169,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: floa
             #amafScores[best_action.ravel] += 1
         else:
             # select one of the unexpanded nodes
-            var possible_actions = forest[result].descendants.filterIt(
+            var possible_actions = thisNode.descendants.filterIt(
                 result.next(it) notin forest
             )
             possible_actions.shuffle
@@ -197,17 +190,24 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
         var actions = state.actions
         if actions.len == 0: # terminal state
             break
-        state = state.next actions.sample
-        #let capture_actions = actions.filterIt(state.board[it].isLive)
-        #if capture_actions.len > 0 and rand(1.0) > 0.1:
-        #    state = state.next capture_actions.sample
-        #if rand(1.0) > 0.1:
-        #    actions.shuffle
-        #    let best_idx = actions.mapIt(h(state, it)).maxIndex
-        #    state = state.next actions[best_idx]
+
+        #state = state.next actions.sample
+        #var captureActions = actions
+        #captureActions.setIntersect state.board.liveCellsFor state.whoseTurn.other
+        #if captureActions.len > 0 and rand(1.0) > 0.1:
+        #    state = state.next captureActions.sample
         #else:
-        #    # random
         #    state = state.next actions.sample
+
+        var best_score = -99.0
+        var best_action: Action
+        for action in actions:
+            let score = h(state, action)
+            if score > best_score:
+                best_score=score
+                best_action=action
+        state = state.next best_action
+
     # Update nodes
     var winner = state.whoseTurn.other
     state = startState
@@ -288,3 +288,5 @@ when isMainModule:
             break
             var best_action = forest.mcts(current_state, 100000, heuristic)
             current_state = current_state.next best_action
+
+    echo "Flood fills: ", COUNT_FF
