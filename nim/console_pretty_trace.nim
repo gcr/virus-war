@@ -82,23 +82,23 @@ proc clear_board(forest: MCTSForest, state: State) =
     stdout.flushFile()
     stderr.flushFile()
 
-proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, move: LoggedMove): Action =
+proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, move: LoggedMove, blockSize: int = 500): Action =
     var i=0
-    proc cb(forest: var MCTSForest) =
-        if i mod 500 == 0:
-            if i == 0:
-                stdout.write current_state.board
-            else:
-                eraseLine()
-                cursorUp()
-                clear_board(forest, current_state)
-                show_board(forest, current_state)
-            write(stdout, fmt "...thinking... {100.0*i.float/n_trials.float:2.1f}%")
-            flushFile(stdout)
+    var n_trials = n_trials
+    while i < n_trials:
+        result = forest.mcts(current_state, blockSize, h)
+        if i == 0:
+            stdout.write current_state.board
+        else:
+            eraseLine()
+            cursorUp()
+            clear_board(forest, current_state)
+            show_board(forest, current_state)
+        i += blockSize
+        write(stdout, fmt "...thinking... {100.0*i.float/n_trials.float:2.1f}%")
+        flushFile(stdout)
 
-            move.logTree(forest, current_state, i)
-        i += 1
-    result = forest.mcts(current_state, n_trials, h, cb)
+        move.logTree(forest, current_state, i)
 
     stdout.write("\r")
     stdout.flushFile()
@@ -126,7 +126,7 @@ when isMainModule:
     #    current_state.board[loc] = Cell.LiveB
 
     var game = logGame(current_state,
-    "A: slow heuristic and fast rollout, B: NO select heuristic and fast rollout"
+    "A: slow heuristic and slow rollout, B: fast select heuristic and fast rollout"
     )
 
     #echo "You're player ", Cell.LiveB
@@ -146,8 +146,8 @@ when isMainModule:
             #echo "My turn!"
             var best_action = forest.mctsWithFeedback(
                 current_state,
-                10000,
-                fastHeuristic,
+                100000,
+                heuristic,
                 move,
             )
             current_state = current_state.next best_action
@@ -155,10 +155,10 @@ when isMainModule:
             #echo "Your turn!"
             #var loc = current_state.board.readLocFromStdin(Player.B)
             #current_state = current_state.next loc
-            var best_action = forest.mctsWithFeedback(
+            var best_action = forestB.mctsWithFeedback(
                 current_state,
-                10000,
-                noHeuristic,
+                100000,
+                fastHeuristic,
                 move,
             )
             current_state = current_state.next best_action

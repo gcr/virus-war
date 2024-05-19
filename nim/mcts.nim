@@ -238,35 +238,19 @@ proc readLocFromStdin*(board: Board, forPlayer: Player): Loc =
     if result notin board.possibleMovesFor(forPlayer).toSeq:
         return board.readLocFromStdin forPlayer
 
-proc nothing(f: var MCTSForest) = discard
-
-proc mcts*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, cb: (var MCTSForest)->void = nothing): Action =
+proc mcts*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable): Action =
     #var amafScores: array[maxLocDeque, float]
     for i in 0 ..< n_trials:
         let state = forest.selectAndExpand(current_state, i.float, h)
         forest.rollout(state, h)
-        cb(forest)
     var possible_actions = forest[current_state].descendants
     var best_idx = possible_actions.mapIt(
         forest[current_state.next it].nVisits
     ).maxIndex
     return possible_actions[best_idx]
 
-proc mcts_verbose*(forest: var MCTSForest, current_state: State, n_trials: int = 100000): Action =
-    var i=0
-    proc cb(forest: var MCTSForest) =
-        i += 1
-        if i mod 500 == 0:
-            write(stdout, fmt "\r...thinking... {100.0*i.float/n_trials.float:2.1f}%")
-            flushFile(stdout)
 
-    result = mcts(forest, current_state, n_trials, heuristic, cb)
-    stdout.write("\r")
-    dump forest[current_state][]
-    var possible_actions = forest[current_state].descendants
-    for action in possible_actions:
-        echo " -- ", action, "-> ", forest[current_state.next action][]
-    echo "\nSelecting ", result, ": ", forest[current_state.next result][]
+
         
 when isMainModule:
     randomize()
@@ -293,10 +277,14 @@ when isMainModule:
             break
         if current_state.whoseTurn == Player.A:
             echo "My turn!"
-            var best_action = forest.mcts_verbose(current_state)
+            var best_action = forest.mcts(current_state, 100000, heuristic)
+            dump forest[current_state][]
+            var possible_actions = forest[current_state].descendants
+            for action in possible_actions:
+                echo " -- ", action, "-> ", forest[current_state.next action][]
             current_state = current_state.next best_action
         else:
             echo "Your turn!"
             break
-            var best_action = forest.mcts_verbose(current_state)
+            var best_action = forest.mcts(current_state, 100000, heuristic)
             current_state = current_state.next best_action

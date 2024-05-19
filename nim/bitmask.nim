@@ -11,7 +11,7 @@ import random
 import tables
 import bitops
 
-type Bitmask* = array[11, uint16]
+type Bitmask* = array[16, uint16]
 const nBits = sizeof(uint16) * 8
 
 proc `$`*(bm: Bitmask): string =

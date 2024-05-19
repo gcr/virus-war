@@ -6,3 +6,6 @@ mcts
 console_pretty_trace
 game-log.sqlite
 bitmask
+mcts-no-heuristic
+mcts.dSYM
+nimcache
