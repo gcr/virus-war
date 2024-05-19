@@ -10,7 +10,11 @@ import deques
 import random
 import tables
 import bitops
-import neon
+
+const USE_NEON = true
+
+when USE_NEON:
+    import neon
 
 type Bitmask* = array[16, uint16]
 const nBits = sizeof(uint16) * 8
@@ -42,91 +46,105 @@ proc `[]=`*(bm: var Bitmask, r: uint8, c: uint8, v: bool) =
         bm[r].clearBit(nBits-1 - c)
 
 proc setUnion*(bm: var Bitmask, other: Bitmask) =
-    #for i in 0..bm.high:
-    #    bm[i] = bitor(bm[i], other[i])
-    var vec1A: uint8x16 = vld1q_u8(addr bm[0])
-    var vec1B: uint8x16 = vld1q_u8(addr bm[8])
-    var vec2A: uint8x16 = vld1q_u8(addr other[0])
-    var vec2B: uint8x16 = vld1q_u8(addr other[8])
-    vec1A = vorrq_u8(vec1A, vec2A)
-    vec1B = vorrq_u8(vec1B, vec2B)
-    vst1q_u8(addr bm[0], vec1A)
-    vst1q_u8(addr bm[8], vec1B)
+    when USE_NEON:
+        var vec1A: uint8x16 = vld1q_u8(addr bm[0])
+        var vec1B: uint8x16 = vld1q_u8(addr bm[8])
+        var vec2A: uint8x16 = vld1q_u8(addr other[0])
+        var vec2B: uint8x16 = vld1q_u8(addr other[8])
+        vec1A = vorrq_u8(vec1A, vec2A)
+        vec1B = vorrq_u8(vec1B, vec2B)
+        vst1q_u8(addr bm[0], vec1A)
+        vst1q_u8(addr bm[8], vec1B)
+    else:
+        for i in 0..bm.high:
+            bm[i] = bitor(bm[i], other[i])
 
 
 proc setIntersect*(bm: var Bitmask, other: Bitmask) =
-    #for i in 0..bm.high:
-    #    bm[i] = bitand(bm[i], other[i])
-    var vec1A: uint8x16 = vld1q_u8(addr bm[0])
-    var vec1B: uint8x16 = vld1q_u8(addr bm[8])
-    var vec2A: uint8x16 = vld1q_u8(addr other[0])
-    var vec2B: uint8x16 = vld1q_u8(addr other[8])
-    vec1A = vandq_u8(vec1A, vec2A)
-    vec1B = vandq_u8(vec1B, vec2B)
-    vst1q_u8(addr bm[0], vec1A)
-    vst1q_u8(addr bm[8], vec1B)
+    when USE_NEON:
+        var vec1A: uint8x16 = vld1q_u8(addr bm[0])
+        var vec1B: uint8x16 = vld1q_u8(addr bm[8])
+        var vec2A: uint8x16 = vld1q_u8(addr other[0])
+        var vec2B: uint8x16 = vld1q_u8(addr other[8])
+        vec1A = vandq_u8(vec1A, vec2A)
+        vec1B = vandq_u8(vec1B, vec2B)
+        vst1q_u8(addr bm[0], vec1A)
+        vst1q_u8(addr bm[8], vec1B)
+    else:
+        for i in 0..bm.high:
+            bm[i] = bitand(bm[i], other[i])
+
 proc setSubtract*(bm: var Bitmask, other: Bitmask) =
-    #for i in 0..bm.high:
-    #    bm[i] = bitand(bm[i], bitxor(0xffff'u16, other[i]))
-    var vec1A: uint8x16 = vld1q_u8(addr bm[0])
-    var vec1B: uint8x16 = vld1q_u8(addr bm[8])
-    var vec2A: uint8x16 = vld1q_u8(addr other[0])
-    var vec2B: uint8x16 = vld1q_u8(addr other[8])
-    vec1A = vbicq_u8(vec1A, vec2A)
-    vec1B = vbicq_u8(vec1B, vec2B)
-    vst1q_u8(addr bm[0], vec1A)
-    vst1q_u8(addr bm[8], vec1B)
+    when USE_NEON:
+        var vec1A: uint8x16 = vld1q_u8(addr bm[0])
+        var vec1B: uint8x16 = vld1q_u8(addr bm[8])
+        var vec2A: uint8x16 = vld1q_u8(addr other[0])
+        var vec2B: uint8x16 = vld1q_u8(addr other[8])
+        vec1A = vbicq_u8(vec1A, vec2A)
+        vec1B = vbicq_u8(vec1B, vec2B)
+        vst1q_u8(addr bm[0], vec1A)
+        vst1q_u8(addr bm[8], vec1B)
+    else:
+        for i in 0..bm.high:
+            bm[i] = bitand(bm[i], bitxor(0xffff'u16, other[i]))
 
 proc dilate*(bm: var Bitmask) =
-    # dilate cols
-    #template dilateCols(x): typeof(bm[0]) = bitor(x, (x.shr 1), (x.shl 1))
-    #for i in 0 .. bm.high:
-    #    bm[i] = bm[i].dilateCols
-    var vecA: uint16x8 = vld1q_u16(addr bm[0])
-    var vecB: uint16x8 = vld1q_u16(addr bm[8])
-    var vecAl = vshlq_n_u16(vecA, 1)
-    var vecBl = vshlq_n_u16(vecB, 1)
-    var vecAr = vshrq_n_u16(vecA, 1)
-    var vecBr = vshrq_n_u16(vecB, 1)
-    vecA = vorrq_u16(vecA, vecAl)
-    vecB = vorrq_u16(vecB, vecBl)
-    vecA = vorrq_u16(vecA, vecAr)
-    vecB = vorrq_u16(vecB, vecBr)
-    vst1q_u16(addr bm[0], vecA)
-    vst1q_u16(addr bm[8], vecB)
+    when USE_NEON:
+        # dilate cols
+        var vecA: uint16x8 = vld1q_u16(addr bm[0])
+        var vecB: uint16x8 = vld1q_u16(addr bm[8])
+        var vecAl = vshlq_n_u16(vecA, 1)
+        var vecBl = vshlq_n_u16(vecB, 1)
+        var vecAr = vshrq_n_u16(vecA, 1)
+        var vecBr = vshrq_n_u16(vecB, 1)
+        vecA = vorrq_u16(vecA, vecAl)
+        vecB = vorrq_u16(vecB, vecBl)
+        vecA = vorrq_u16(vecA, vecAr)
+        vecB = vorrq_u16(vecB, vecBr)
+        vst1q_u16(addr bm[0], vecA)
+        vst1q_u16(addr bm[8], vecB)
 
-    # dilate rows
-    #var prev = bm[0]
-    #for i in 0 .. bm.high-1:
-    #    let tmp = bm[i]
-    #    bm[i] = bitor(prev, bm[i], bm[i+1])
-    #    prev = tmp
-    #bm[bm.high] = bitor(bm[bm.high], prev)
-    var shiftArray: array[18, uint16]
-    for i in 0..bm.high:
-        shiftArray[i+1] = bm[i]
-    shiftArray[0] = bm[0]
-    shiftArray[17] = bm[15]
-    # above
-    var rowsAboveA: uint16x8 = vld1q_u16(addr shiftArray[0])
-    var rowsAboveB: uint16x8 = vld1q_u16(addr shiftArray[8])
-    var rowsBelowA: uint16x8 = vld1q_u16(addr shiftArray[2])
-    var rowsBelowB: uint16x8 = vld1q_u16(addr shiftArray[10])
-    vecA = vorrq_u16(vecA, rowsAboveA)
-    vecB = vorrq_u16(vecB, rowsAboveB)
-    vecA = vorrq_u16(vecA, rowsBelowA)
-    vecB = vorrq_u16(vecB, rowsBelowB)
-    vst1q_u16(addr bm[0], vecA)
-    vst1q_u16(addr bm[8], vecB)
+        # dilate rows
+        var shiftArray: array[18, uint16]
+        for i in 0..bm.high:
+            shiftArray[i+1] = bm[i]
+        shiftArray[0] = bm[0]
+        shiftArray[17] = bm[15]
+        # as above...
+        var rowsAboveA: uint16x8 = vld1q_u16(addr shiftArray[0])
+        var rowsAboveB: uint16x8 = vld1q_u16(addr shiftArray[8])
+        # ...so below
+        var rowsBelowA: uint16x8 = vld1q_u16(addr shiftArray[2])
+        var rowsBelowB: uint16x8 = vld1q_u16(addr shiftArray[10])
+        vecA = vorrq_u16(vecA, rowsAboveA)
+        vecB = vorrq_u16(vecB, rowsAboveB)
+        vecA = vorrq_u16(vecA, rowsBelowA)
+        vecB = vorrq_u16(vecB, rowsBelowB)
+        vst1q_u16(addr bm[0], vecA)
+        vst1q_u16(addr bm[8], vecB)
+    else:
+        # dilate cols
+        template dilateCols(x): typeof(bm[0]) = bitor(x, (x.shr 1), (x.shl 1))
+        for i in 0 .. bm.high:
+            bm[i] = bm[i].dilateCols
+        # dilate rows
+        var prev = bm[0]
+        for i in 0 .. bm.high-1:
+            let tmp = bm[i]
+            bm[i] = bitor(prev, bm[i], bm[i+1])
+            prev = tmp
+        bm[bm.high] = bitor(bm[bm.high], prev)
 
 proc len*(bm: Bitmask): int =
-    #for row in bm: result += row.popcount
-    var vecA: uint8x16 = vld1q_u8(addr bm[0])
-    var vecB: uint8x16 = vld1q_u8(addr bm[8])
-    vecA = vcntq_u8(vecA)
-    vecB = vcntq_u8(vecB)
-    result += vaddvq_u8(vecA).int
-    result += vaddvq_u8(vecB).int
+    when USE_NEON:
+        var vecA: uint8x16 = vld1q_u8(addr bm[0])
+        var vecB: uint8x16 = vld1q_u8(addr bm[8])
+        vecA = vcntq_u8(vecA)
+        vecB = vcntq_u8(vecB)
+        result += vaddvq_u8(vecA).int
+        result += vaddvq_u8(vecB).int
+    else:
+        for row in bm: result += row.popcount
 
 proc clipSize*(bm: var Bitmask, width: uint8, height: uint8) =
     for r in 0'u8..<height:
