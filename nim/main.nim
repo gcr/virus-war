@@ -11,10 +11,10 @@ import random
 import tables
 import bitmask
 
-const 
+const
     maxSize* = 16
     maxLocDeque* = 195
-type 
+type
   Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
     Empty = "\e[1;37m·\e[0m"
@@ -54,7 +54,7 @@ type
   Board* = object
     width*: uint8
     height*: uint8
-    
+
     liveA: Bitmask
     liveB: Bitmask
     lockedA: Bitmask
@@ -131,7 +131,7 @@ proc possibleMovesFor*(board: Board, player: Player): Bitmask =
     result.setSubtract deadCells
     result.setSubtract otherDeadCells
     result.clipSize(board.width, board.height)
-    
+
 
 
 when isMainModule:

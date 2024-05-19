@@ -190,8 +190,8 @@ proc sample*(bm: Bitmask): (uint8, uint8) =
                     tmp = bitand(tmp, tmp-1)
                     randomCol -= 1
             randomRow -= 1
-            
-    
+
+
 iterator items*(bm: Bitmask): (uint8, uint8) {.inline.} =
     for ri in 0..bm.high:
         var tmp = bm[ri].reverseBits

@@ -93,7 +93,7 @@ suite "Bitmask":
     check bm[4] == 0b1111110000000010
     check bm[5] == 0b1111110000000010
     check bm[6] == 0b0000100000000000
-    
+
     # Longgggg winding path, notably longer than the size of the bitmask
     bmMask[3] =    0b1111111111111110
     bmMask[4] =    0b0000000000000001
@@ -120,7 +120,7 @@ suite "Bitmask":
     for i in 0..100:
       testSet.incl bm.sample
     check testSet == toHashSet [(3'u8, 5'u8), (5'u8, 9'u8), (2'u8, 12'u8)]
-    
+
     var bm2: Bitmask
     bm2[2,2] = true
     for i in 0..100:

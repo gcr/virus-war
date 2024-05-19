@@ -23,7 +23,7 @@ type
     State* = object
       board*: Board
       whoseTurn*: Player
-      capturesToMake*: uint8 
+      capturesToMake*: uint8
       # how many moves this player has yet to make on this turn.
       # typically starts at 3, and when it's 0, play ends
 
@@ -109,7 +109,7 @@ proc isFullyExpanded*(forest: var MCTSForest, state: State): bool =
 type HeuristicCallable* = (State, Action) -> float
 
 proc heuristic*(state: State, action: Action): float =
-    var 
+    var
         proposedState = state.next action
         nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).len
         nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).len
@@ -123,7 +123,7 @@ proc fastHeuristic*(state: State, action: Action): float =
     if state.board[action].isLive and rand(1.0) > 0.2:
         return 1.0 + rand(1.0)
     return 0.0 + rand(1.0)
-    #var 
+    #var
     #    proposedState = state.next action
     #    nMyMoves = memoizedNMoves(proposedState.board, state.whoseTurn)
     #    nYourMoves = memoizedNMoves(proposedState.board, state.whoseTurn.other)
@@ -133,7 +133,7 @@ proc fastHeuristic*(state: State, action: Action): float =
     #return nDiff.float
 
 
-proc selectAndExpand*(forest: var MCTSForest, state: State, total_playouts: float, h: HeuristicCallable): State =
+proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable): State =
     result = state
     var parent_state: State = state
     while result in forest:
@@ -238,10 +238,17 @@ proc readLocFromStdin*(board: Board, forPlayer: Player): Loc =
     if result notin board.possibleMovesFor(forPlayer).toSeq:
         return board.readLocFromStdin forPlayer
 
-proc mcts*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable): Action =
+proc mcts*(
+        forest: var MCTSForest,
+        current_state: State,
+        n_trials: int = 100000,
+        h: HeuristicCallable,
+        ): Action =
+    ## Run MCTS a certain number of times, using the given heuristic
+
     #var amafScores: array[maxLocDeque, float]
     for i in 0 ..< n_trials:
-        let state = forest.selectAndExpand(current_state, i.float, h)
+        let state = forest.selectAndExpand(current_state, h)
         forest.rollout(state, h)
     var possible_actions = forest[current_state].descendants
     var best_idx = possible_actions.mapIt(
@@ -251,7 +258,8 @@ proc mcts*(forest: var MCTSForest, current_state: State, n_trials: int = 100000,
 
 
 
-        
+
+################################################################################
 when isMainModule:
     randomize()
     var current_state = State(
