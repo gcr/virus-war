@@ -60,23 +60,23 @@ type
     lockedA: Bitmask
     lockedB: Bitmask
 
-proc `[]`*(b: Board, r: Loc): Cell =
+proc `[]`*(b: Board, r: Loc): Cell {.inline.} =
     if b.lockedA[r.r, r.c]: Cell.LockedA
     elif b.lockedB[r.r, r.c]: Cell.LockedB
     elif b.liveA[r.r, r.c]: Cell.LiveA
     elif b.liveB[r.r, r.c]: Cell.LiveB
     else: Cell.Empty
-proc `[]`*(b:Board, r:uint8, c:uint8): Cell = b[(r,c)]
-proc `[]=`*(b: var Board, r: Loc, v:Cell) =
+proc `[]`*(b:Board, r:uint8, c:uint8): Cell {.inline.} = b[(r,c)]
+proc `[]=`*(b: var Board, r: Loc, v:Cell) {.inline.} =
     b.liveA[r.r, r.c] = (v == Cell.LiveA)
     b.lockedA[r.r, r.c] = (v == Cell.LockedA)
     b.liveB[r.r, r.c] = (v == Cell.LiveB)
     b.lockedB[r.r, r.c] = (v == Cell.LockedB)
-proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) =
+proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) {.inline.} =
     b[(r,c)] = v
-proc `[]=`*(b: var Board, r: int, c:int, v:Cell) =
+proc `[]=`*(b: var Board, r: int, c:int, v:Cell) {.inline.} =
     b[(r.uint8,c.uint8)] = v
-proc `[]=`*(b: var Board, loc: (int, int), v:Cell) =
+proc `[]=`*(b: var Board, loc: (int, int), v:Cell) {.inline.} =
     b[loc[0], loc[1]] = v
 proc `$`*(b: Board): string =
     const
@@ -93,11 +93,11 @@ proc `$`*(b: Board): string =
         result &= "\n"
 proc `$`*(l: Loc): string =
     "abcdefghijklmnopqrstuvwxyz"[l.r] & "123456789abcdefg"[l.c]
-proc `+`*(a: Loc, b: Loc): Loc =
+proc `+`*(a: Loc, b: Loc): Loc {.inline.} =
     return (a.r+b.r, a.c+b.c)
-proc `+`*(a: Loc, b: (int, int)): Loc =
+proc `+`*(a: Loc, b: (int, int)): Loc {.inline.} =
     return (a.r+uint8(b[0]), a.c+uint8(b[1])) # two's complement?
-proc contains*(b: Board, c: Loc): bool =
+proc contains*(b: Board, c: Loc): bool {.inline.} =
     result = (c.r >= 0 and c.r < b.height and
               c.c >= 0 and c.c < b.width)
 proc board*(width: uint8, height: uint8): Board =
@@ -108,31 +108,24 @@ proc board*(width: uint8, height: uint8): Board =
     board[0,width-1] = Cell.LiveB
     board[height-1, 0] = Cell.LiveA
     return board
-iterator neighbors*(board: Board, c: Loc): Loc =
-    for dc in [-1, 0, 1]:
-        for dr in [-1,0,1]:
-            if dr != 0 or dc != 0:
-                if c+(dr,dc) in board:
-                    yield c+(dr,dc)
-#iterator neighbors(board: Board, c: Loc): Loc =
-#    if c+(-1,-1) in board: yield c+(-1, -1)
-#    if c+(-1, 0) in board: yield c+(-1,  0)
-#    if c+(-1, 1) in board: yield c+(-1,  1)
-#    if c+( 0,-1) in board: yield c+( 0, -1)
-#    if c+( 0, 0) in board: yield c+( 0,  0)
-#    if c+( 0, 1) in board: yield c+( 0,  1)
-#    if c+( 1,-1) in board: yield c+( 1, -1)
-#    if c+( 1, 0) in board: yield c+( 1,  0)
-#    if c+( 1, 1) in board: yield c+( 1,  1)
-iterator items*(b:Board): Loc =
+iterator items*(b:Board): Loc {.inline.} =
     for r in 0'u8..<b.width:
         for c in 0'u8..<b.height:
             yield (r.uint8,c.uint8)
 
+proc liveCellsFor*(board: Board, player: Player): Bitmask {.inline.} =
+    case player:
+    of Player.A: board.liveA
+    of Player.B: board.liveB
+proc lockedCellsFor*(board: Board, player: Player): Bitmask {.inline.} =
+    case player:
+    of Player.A: board.lockedA
+    of Player.B: board.lockedB
+
 proc possibleMovesFor*(board: Board, player: Player): Bitmask =
-    let deadCells = (if player==Player.A: board.lockedA else: board.lockedB)
-    let liveCells = (if player==Player.A: board.liveA else: board.liveB)
-    let otherDeadCells = (if player==Player.A: board.lockedB else: board.lockedA)
+    let deadCells = board.lockedCellsFor player
+    let liveCells = board.liveCellsFor player
+    let otherDeadCells = board.lockedCellsFor player.other
     # tmp represents whichever cells border live groups
     result = liveCells
     for i in 0..result.high:
@@ -146,6 +139,7 @@ proc possibleMovesFor*(board: Board, player: Player): Bitmask =
     result.setSubtract otherDeadCells
     result.clipSize(board.width, board.height)
     
+
 
 when isMainModule:
     randomize()
