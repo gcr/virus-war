@@ -181,12 +181,12 @@ proc sample*(bm: Bitmask): (uint8, uint8) =
         if bm[row] > 0:
             if randomRow == 0:
                 # this row!
-                # pick a random col (indexing from the RIGHT)
-                var tmp = bm[row].reverseBits
+                # pick a random col (indexing from the LEFT)
+                var tmp = bm[row]
                 var randomCol = rand(tmp.popcount-1)
                 while true:
                     if randomCol == 0:
-                        return (row.uint8, uint8(tmp.firstSetBit - 1))
+                        return (row.uint8, uint8(nBits - tmp.firstSetBit))
                     tmp = bitand(tmp, tmp-1)
                     randomCol -= 1
             randomRow -= 1
