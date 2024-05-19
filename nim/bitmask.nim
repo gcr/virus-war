@@ -1,14 +1,5 @@
-import strutils
-import sequtils
-import strformat
-import algorithm
-import options
 import hashes
-import sugar
-import sets
-import deques
 import random
-import tables
 import bitops
 
 const useNeon {.booldefine.} = true
@@ -126,7 +117,8 @@ proc dilate*(bm: var Bitmask) =
         vst1q_u16(addr bm[8], vecB)
     else:
         # dilate cols
-        template dilateCols(x): typeof(bm[0]) = bitor(x, (x.shr 1), (x.shl 1))
+        template dilateCols(x): typeof(bm[0]) =
+            bitor(x, (x.shr 1), (x.shl 1))
         for i in 0 .. bm.high:
             bm[i] = bm[i].dilateCols
         # dilate rows

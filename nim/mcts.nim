@@ -6,15 +6,7 @@ import random
 import strutils
 import sequtils
 import strformat
-import algorithm
 import options
-import hashes
-import sugar
-import sets
-import deques
-import random
-import strformat
-import rdstdin
 import math
 import bitmask
 import argmax
@@ -133,6 +125,7 @@ proc selectAndExpand*(
         forest: var MCTSForest,
         state: State,
         h: HeuristicCallable,
+        cParam: float = 1.0,
         useLogScoreVisitHeuristicNormalization: bool = false,
         ): State =
     result = state
@@ -148,7 +141,7 @@ proc selectAndExpand*(
                 let nextState = result.next action
                 let node = forest[nextState][]
                 let whoseTurn = result.whoseTurn
-                var score = score(node, thisNode.nVisits.float, whoseTurn)
+                var score = score(node, thisNode.nVisits.float, whoseTurn, cParam)
 
                 # AMAF?
                 #score += 0.1 * amafScores[action.ravel] / (forest[result].nVisits.float + 1)
@@ -236,18 +229,57 @@ func stopAtNTrials*(maxTrials: int): StoppingCriterion =
       n >= maxTrials
 
 
+type FinalSelectHeuristicCallable = (var MCTSForest, State) -> Action
+
+proc mostVisitedNode*(forest: var MCTSForest, currentState: State): Action =
+    return argmax(action, forest[currentState].descendants):
+        forest[currentState.next action].nVisits
 
 ################################################################################
-## MCTS Players
-type MCTSPlayer* = object
+## MCTS Strategies
+type MCTSStrategy* = object
     tag*: string
-    descriptipn*: string
+    description*: string
     selectHeuristic*: HeuristicCallable
     rolloutHeuristic*: HeuristicCallable
     stoppingCriterion*: StoppingCriterion
+    cParam*: float = 1.0
     useLogScoreVisitHeuristicNormalization*: bool = false
+    finalSelection*: FinalSelectHeuristicCallable = mostVisitedNode
+
+proc mcts*(
+        strat: MCTSStrategy,
+        forest: var MCTSForest,
+        currentState: var State,
+        blockSize: int = 500,
+        ): Action =
+    var i = 0
+    while not strat.stoppingCriterion(forest, currentState, i):
+        for j in 0 ..< blockSize:
+            let selectedState = forest.selectAndExpand(
+                currentState,
+                strat.selectHeuristic,
+                strat.cParam,
+                strat.useLogScoreVisitHeuristicNormalization
+            )
+            forest.rollout(selectedState, strat.rolloutHeuristic)
+            i += 1
+    strat.finalSelection(forest, currentState)
 
 
+var MCTS_REGISTRY: seq[MCTSStrategy]
+proc register*(strategy: MCTSStrategy) =
+    for other in MCTS_REGISTRY:
+        if strategy.tag == other.tag:
+            raise newException(ValueError, "Duplicate tag")
+        if strategy.description != "" and strategy.description == other.description:
+            raise newException(ValueError, "Duplicate description")
+    MCTS_REGISTRY.add strategy
+
+proc getMCTSStrategy*(tag: string): Option[MCTSStrategy] =
+    for s in MCTS_REGISTRY:
+        if s.tag == tag:
+            return some(s)
 
 ################################################################################
 when isMainModule:
