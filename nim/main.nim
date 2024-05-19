@@ -10,6 +10,7 @@ import deques
 import random
 import tables
 import bitmask
+import rdstdin
 
 const
     maxSize* = 16
@@ -132,7 +133,23 @@ proc possibleMovesFor*(board: Board, player: Player): Bitmask =
     result.setSubtract otherDeadCells
     result.clipSize(board.width, board.height)
 
+proc toLoc*(str: string): Loc =
+    ## Converts a string like "d5" into (3, 4)
+    ## Returns (255'u8, 255'u8) on failure
+    let
+        row = "abcdefghijklmnopqrstuvwxyz".find(str[0])
+        col = "123456789abc".find(str[1])
+    result = (row.uint8, col.uint8)
 
+proc readLocFromStdin*(board: Board, forPlayer: Player): Loc =
+    let str = readLineFromStdin "Pick a move> "
+    result = str.toLoc
+    if result notin board:
+        return board.readLocFromStdin forPlayer
+    if (board[result] ~> forPlayer) == Invalid:
+        return board.readLocFromStdin forPlayer
+    if result notin board.possibleMovesFor(forPlayer).toSeq:
+        return board.readLocFromStdin forPlayer
 
 when isMainModule:
     randomize()

@@ -26,8 +26,8 @@ type
       capturesToMake*: uint8
       # how many moves this player has yet to make on this turn.
       # typically starts at 3, and when it's 0, play ends
-
     Action* = Loc
+
 proc `$`*(s: State): string =
     result = $s.board
     if s.whoseTurn == Player.A:
@@ -64,29 +64,33 @@ type
         nVisits*: uint
         depthSum*: int
         parent*: ref MCTSNode
-
     MCTSForest* = Table[State, ref MCTSNode]
+
 proc `$`*(node: MCTSNode): string =
     fmt "Node(wins for A: {node.nWinsA.float/node.nVisits.float:0.3f}, ratio: {node.nWinsA} / {node.nWinsB} / {node.nVisits}, children: {node.descendants.len})"
 
-proc winAFraction*(node: MCTSNode): float =
-    node.nWinsA.float / node.nVisits.float
-proc winBFraction*(node: MCTSNode): float =
-    node.nWinsB.float / node.nVisits.float
+proc winAFraction*(node: MCTSNode): float = node.nWinsA.float / node.nVisits.float
+proc winBFraction*(node: MCTSNode): float = node.nWinsB.float / node.nVisits.float
 proc winFraction*(node: MCTSNode, player: Player): float =
     if player == Player.A:
         node.winAFraction
     else:
         node.winBFraction
+
 proc bestAction*(forest: MCTSForest, state: State): Loc =
     let actions = forest[state].descendants
     actions[actions.mapIt(forest[state.next it].nVisits).maxIndex]
+
 proc avgDepth*(forest: MCTSForest, node: MCTSNode): float =
     node.depthSum.float / node.nVisits.float
 
-proc score*(node: MCTSNode, parent_n: float, player: Player): float =
-    let c_param = 1.0
-    # 0.75 is a good value
+proc score*(
+        node: MCTSNode,
+        parent_n: float,
+        player: Player,
+        c_param:float = 1.0,
+        ): float =
+    # 0.75 is a good value for C
     # exploitation
     if player == Player.A:
         result = node.nWinsA.float / (node.nVisits.float)
@@ -108,7 +112,7 @@ proc isFullyExpanded*(forest: var MCTSForest, state: State): bool =
 
 type HeuristicCallable* = (State, Action) -> float
 
-proc heuristic*(state: State, action: Action): float =
+proc optionsDiffHeuristic*(state: State, action: Action): float =
     var
         proposedState = state.next action
         nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).len
@@ -123,15 +127,6 @@ proc fastHeuristic*(state: State, action: Action): float =
     if state.board[action].isLive and rand(1.0) > 0.2:
         return 1.0 + rand(1.0)
     return 0.0 + rand(1.0)
-    #var
-    #    proposedState = state.next action
-    #    nMyMoves = memoizedNMoves(proposedState.board, state.whoseTurn)
-    #    nYourMoves = memoizedNMoves(proposedState.board, state.whoseTurn.other)
-    #    #nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).toSeq.len
-    #    #nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).toSeq.len
-    #    nDiff = (nMyMoves - nYourMoves)
-    #return nDiff.float
-
 
 proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable): State =
     result = state
@@ -169,6 +164,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable
             #amafScores[best_action.ravel] += 1
         else:
             # select one of the unexpanded nodes
+            # using the heuristic
             var possible_actions = thisNode.descendants.filterIt(
                 result.next(it) notin forest
             )
@@ -190,14 +186,6 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
         var actions = state.actions
         if actions.len == 0: # terminal state
             break
-
-        #state = state.next actions.sample
-        #var captureActions = actions
-        #captureActions.setIntersect state.board.liveCellsFor state.whoseTurn.other
-        #if captureActions.len > 0 and rand(1.0) > 0.1:
-        #    state = state.next captureActions.sample
-        #else:
-        #    state = state.next actions.sample
 
         var best_score = -99.0
         var best_action: Action
@@ -225,19 +213,6 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
             break
         node = node.parent
 
-proc readLocFromStdin*(board: Board, forPlayer: Player): Loc =
-    let str = readLineFromStdin "Pick a move> "
-    let
-        row = "abcdefghijklmnopqrstuvwxyz".find(str[0])
-        col = "123456789abc".find(str[1])
-    result = (row.uint8, col.uint8)
-    if result notin board:
-        return board.readLocFromStdin forPlayer
-    if (board[result] ~> forPlayer) == Invalid:
-        return board.readLocFromStdin forPlayer
-    if result notin board.possibleMovesFor(forPlayer).toSeq:
-        return board.readLocFromStdin forPlayer
-
 proc mcts*(
         forest: var MCTSForest,
         current_state: State,
@@ -255,6 +230,7 @@ proc mcts*(
         forest[current_state.next it].nVisits
     ).maxIndex
     return possible_actions[best_idx]
+
 
 
 
@@ -285,7 +261,7 @@ when isMainModule:
             break
         if current_state.whoseTurn == Player.A:
             echo "My turn!"
-            var best_action = forest.mcts(current_state, 100000, heuristic)
+            var best_action = forest.mcts(current_state, 100000, optionsDiffHeuristic)
             dump forest[current_state][]
             var possible_actions = forest[current_state].descendants
             for action in possible_actions:
@@ -294,5 +270,5 @@ when isMainModule:
         else:
             echo "Your turn!"
             break
-            var best_action = forest.mcts(current_state, 100000, heuristic)
+            var best_action = forest.mcts(current_state, 100000, optionsDiffHeuristic)
             current_state = current_state.next best_action

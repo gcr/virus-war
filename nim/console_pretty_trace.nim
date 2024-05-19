@@ -10,7 +10,7 @@ import sugar
 import sequtils
 import gameLog
 
-type RGB = tuple 
+type RGB = tuple
     r: float
     g: float
     b: float
@@ -65,7 +65,7 @@ proc show_board(forest: MCTSForest, state: State) =
                 let node = forest[state.next (r,c)]
                 result &= bg(nodeToBgcolor(forest, node[], forest[state][]))
             result &= $b[(r,c)] & " "
-        if r == 0:   
+        if r == 0:
             result &= white & " brain strength = {forest[state].nVisits} kg".fmt
         if r == 1:
             result &= white & " futures foretold = {avgDepth:0.3f}".fmt
@@ -147,7 +147,7 @@ when isMainModule:
             var best_action = forest.mctsWithFeedback(
                 current_state,
                 100000,
-                heuristic,
+                optionsDiffHeuristic,
                 move,
             )
             current_state = current_state.next best_action
