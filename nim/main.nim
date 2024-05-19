@@ -61,23 +61,20 @@ type
     lockedB: Bitmask
 
 proc `[]`*(b: Board, r: Loc): Cell {.inline.} =
-    if b.lockedA[r.r, r.c]: Cell.LockedA
+    if b.lockedA[r.r, r.c]:   Cell.LockedA
     elif b.lockedB[r.r, r.c]: Cell.LockedB
-    elif b.liveA[r.r, r.c]: Cell.LiveA
-    elif b.liveB[r.r, r.c]: Cell.LiveB
+    elif b.liveA[r.r, r.c]:   Cell.LiveA
+    elif b.liveB[r.r, r.c]:   Cell.LiveB
     else: Cell.Empty
 proc `[]`*(b:Board, r:uint8, c:uint8): Cell {.inline.} = b[(r,c)]
 proc `[]=`*(b: var Board, r: Loc, v:Cell) {.inline.} =
-    b.liveA[r.r, r.c] = (v == Cell.LiveA)
+    b.liveA[r.r, r.c] =   (v == Cell.LiveA)
     b.lockedA[r.r, r.c] = (v == Cell.LockedA)
-    b.liveB[r.r, r.c] = (v == Cell.LiveB)
+    b.liveB[r.r, r.c] =   (v == Cell.LiveB)
     b.lockedB[r.r, r.c] = (v == Cell.LockedB)
-proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) {.inline.} =
-    b[(r,c)] = v
-proc `[]=`*(b: var Board, r: int, c:int, v:Cell) {.inline.} =
-    b[(r.uint8,c.uint8)] = v
-proc `[]=`*(b: var Board, loc: (int, int), v:Cell) {.inline.} =
-    b[loc[0], loc[1]] = v
+proc `[]=`*(b: var Board, r: uint8, c:uint8, v:Cell) {.inline.} = b[(r,c)] = v
+proc `[]=`*(b: var Board, r: int, c:int, v:Cell) {.inline.} =     b[(r.uint8,c.uint8)] = v
+proc `[]=`*(b: var Board, loc: (int, int), v:Cell) {.inline.} =   b[loc[0], loc[1]] = v
 proc `$`*(b: Board): string =
     const
         white = "\e[1;37m"

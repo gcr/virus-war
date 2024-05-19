@@ -11,9 +11,9 @@ import random
 import tables
 import bitops
 
-const USE_NEON = true
+const useNeon {.booldefine.} = true
 
-when USE_NEON:
+when useNeon:
     import neon
 
 type Bitmask* = array[16, uint16]
@@ -37,6 +37,8 @@ proc hash*(bm: Bitmask): Hash =
 {.push inline, checks: off, assert: off.}
 #{.push.}
 proc `[]`*(bm: Bitmask, r: uint8, c: uint8): bool =
+    if unlikely(r >= 16 or c >= 16):
+        raise newException(IndexDefect, "bitmasks are 16x16")
     return bm[r].shr(nBits-1 - c).bitand(1) == 1
 proc `[]`*(bm: Bitmask, r: int, c: int): bool = bm[r.uint8, c.uint8]
 proc `[]=`*(bm: var Bitmask, r: uint8, c: uint8, v: bool) =
@@ -46,7 +48,7 @@ proc `[]=`*(bm: var Bitmask, r: uint8, c: uint8, v: bool) =
         bm[r].clearBit(nBits-1 - c)
 
 proc setUnion*(bm: var Bitmask, other: Bitmask) =
-    when USE_NEON:
+    when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
         var vec2A: uint8x16 = vld1q_u8(addr other[0])
@@ -61,7 +63,7 @@ proc setUnion*(bm: var Bitmask, other: Bitmask) =
 
 
 proc setIntersect*(bm: var Bitmask, other: Bitmask) =
-    when USE_NEON:
+    when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
         var vec2A: uint8x16 = vld1q_u8(addr other[0])
@@ -75,7 +77,7 @@ proc setIntersect*(bm: var Bitmask, other: Bitmask) =
             bm[i] = bitand(bm[i], other[i])
 
 proc setSubtract*(bm: var Bitmask, other: Bitmask) =
-    when USE_NEON:
+    when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
         var vec2A: uint8x16 = vld1q_u8(addr other[0])
@@ -89,7 +91,7 @@ proc setSubtract*(bm: var Bitmask, other: Bitmask) =
             bm[i] = bitand(bm[i], bitxor(0xffff'u16, other[i]))
 
 proc dilate*(bm: var Bitmask) =
-    when USE_NEON:
+    when useNeon:
         # dilate cols
         var vecA: uint16x8 = vld1q_u16(addr bm[0])
         var vecB: uint16x8 = vld1q_u16(addr bm[8])
@@ -136,7 +138,7 @@ proc dilate*(bm: var Bitmask) =
         bm[bm.high] = bitor(bm[bm.high], prev)
 
 proc len*(bm: Bitmask): int =
-    when USE_NEON:
+    when useNeon:
         var vecA: uint8x16 = vld1q_u8(addr bm[0])
         var vecB: uint8x16 = vld1q_u8(addr bm[8])
         vecA = vcntq_u8(vecA)
