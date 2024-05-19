@@ -17,6 +17,7 @@ import strformat
 import rdstdin
 import math
 import bitmask
+import argmax
 
 
 type
@@ -78,8 +79,8 @@ proc winFraction*(node: MCTSNode, player: Player): float =
         node.winBFraction
 
 proc bestAction*(forest: MCTSForest, state: State): Loc =
-    let actions = forest[state].descendants
-    actions[actions.mapIt(forest[state.next it].nVisits).maxIndex]
+    argmax(action, forest[state].descendants):
+        forest[state.next action].nVisits
 
 proc avgDepth*(forest: MCTSForest, node: MCTSNode): float =
     node.depthSum.float / node.nVisits.float
@@ -128,7 +129,12 @@ proc fastHeuristic*(state: State, action: Action): float =
         return 1.0 + rand(1.0)
     return 0.0 + rand(1.0)
 
-proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable): State =
+proc selectAndExpand*(
+        forest: var MCTSForest,
+        state: State,
+        h: HeuristicCallable,
+        useLogScoreVisitHeuristicNormalization: bool = false,
+        ): State =
     result = state
     var parent_state: State = state
     while result in forest:
@@ -138,11 +144,7 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable
         if thisNode[].isTerminal:
             break
         if forest.isFullyExpanded(result):
-            # use policy to select one of the expanded nodes
-            var
-                best_score = -999.0
-                best_action = thisNode.descendants[0]
-            for action in thisNode.descendants:
+            var best_action = argmax(action, thisNode.descendants):
                 let nextState = result.next action
                 let node = forest[nextState][]
                 let whoseTurn = result.whoseTurn
@@ -155,11 +157,12 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable
                 #if state.board[action].isLive:
                 #    score += 500.0 / (forest[result].nVisits.float + 1)
                 #    #score += 1.0 / ln(forest[result].nVisits.float + 1)
-                score += h(result, action) / (thisNode.nVisits.float + 1)
+                if useLogScoreVisitHeuristicNormalization:
+                    score += h(result, action) / ln(thisNode.nVisits.float + 1)
+                else:
+                    score += h(result, action) / (thisNode.nVisits.float + 1)
+                score
 
-                if best_score < score:
-                    best_score = score
-                    best_action = action
             result = result.next best_action
             #amafScores[best_action.ravel] += 1
         else:
@@ -169,8 +172,8 @@ proc selectAndExpand*(forest: var MCTSForest, state: State, h: HeuristicCallable
                 result.next(it) notin forest
             )
             possible_actions.shuffle
-            let best_idx = possible_actions.mapIt(h(result, it)).maxIndex
-            let action = possible_actions[best_idx]
+            let action = argmax(a, possible_actions):
+                h(result, a)
             result = result.next action
             #amafScores[action.ravel] += 1
     var actions = result.actions.toSeq
@@ -186,14 +189,8 @@ proc rollout*(forest: var MCTSForest, startState: State, h: HeuristicCallable) =
         var actions = state.actions
         if actions.len == 0: # terminal state
             break
-
-        var best_score = -99.0
-        var best_action: Action
-        for action in actions:
-            let score = h(state, action)
-            if score > best_score:
-                best_score=score
-                best_action=action
+        var best_action = argmax(action, actions.items):
+            h(state, action)
         state = state.next best_action
 
     # Update nodes
@@ -226,12 +223,29 @@ proc mcts*(
         let state = forest.selectAndExpand(current_state, h)
         forest.rollout(state, h)
     var possible_actions = forest[current_state].descendants
-    var best_idx = possible_actions.mapIt(
-        forest[current_state.next it].nVisits
-    ).maxIndex
-    return possible_actions[best_idx]
+    return argmax(action, possible_actions):
+        forest[current_state.next action].nVisits
+
+type StoppingCriterion* = (
+    forest: var MCTSForest,
+    currentState: State,
+    nTrials: int) -> bool
+
+func stopAtNTrials*(maxTrials: int): StoppingCriterion =
+    return proc(forest: var MCTSForest, currentState: State, n: int): bool =
+      n >= maxTrials
 
 
+
+################################################################################
+## MCTS Players
+type MCTSPlayer* = object
+    tag*: string
+    descriptipn*: string
+    selectHeuristic*: HeuristicCallable
+    rolloutHeuristic*: HeuristicCallable
+    stoppingCriterion*: StoppingCriterion
+    useLogScoreVisitHeuristicNormalization*: bool = false
 
 
 
