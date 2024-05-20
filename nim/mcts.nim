@@ -21,23 +21,27 @@ type
       # typically starts at 3, and when it's 0, play ends
     Action* = Loc
 
-proc `$`*(s: State): string =
-    result = $s.board
-    if s.whoseTurn == Player.A:
-        result &= "\e[1;31m"
-    else:
-        result &= "\e[1;32m"
-    result &= "»\e[0m"
-    result &= " It's {s.whoseTurn}'s turn to place ".fmt
-    result &= "{s.capturesToMake} more cell".fmt
-    if s.capturesToMake > 1:
-        result &= "s"
-
 proc actions*(state: State): Bitmask =
     state.board.possibleMovesFor(state.whoseTurn)
 
 proc isTerminal*(state: State): bool =
     return state.actions.len == 0
+
+proc `$`*(s: State): string =
+    #result = $s.board
+    let color = [
+        Player.A: "\e[1;31m",
+        Player.B: "\e[1;32m",
+    ]
+    if s.isTerminal:
+        result &= color[s.whoseTurn.other] & "»\e[0m"
+        result &= " {s.whoseTurn.other} won! Good game!".fmt
+    else:
+        result &= color[s.whoseTurn] & "»\e[0m"
+        result &= " It's {s.whoseTurn}'s turn to place ".fmt
+        result &= "{s.capturesToMake} more cell".fmt
+        if s.capturesToMake > 1:
+            result &= "s"
 
 proc next*(state: State, a: Action): State =
     result = state
@@ -251,7 +255,8 @@ proc mcts*(
         strat: MCTSStrategy,
         forest: var MCTSForest,
         currentState: var State,
-        blockSize: int = 500,
+        blockSize: int = 1000,
+        cb: (int)->void = proc(i: int) = discard,
         ): Action =
     var i = 0
     while not strat.stoppingCriterion(forest, currentState, i):
@@ -264,6 +269,7 @@ proc mcts*(
             )
             forest.rollout(selectedState, strat.rolloutHeuristic)
             i += 1
+        cb(i)
     strat.finalSelection(forest, currentState)
 
 
@@ -277,6 +283,8 @@ proc register*(strategy: MCTSStrategy) =
     MCTS_REGISTRY.add strategy
 
 proc getMCTSStrategy*(tag: string): Option[MCTSStrategy] =
+    if tag == "":
+        return some(MCTS_REGISTRY.sample)
     for s in MCTS_REGISTRY:
         if s.tag == tag:
             return some(s)
@@ -300,11 +308,8 @@ when isMainModule:
     if current_state.whoseTurn == Player.B:
         echo "You have the first move."
     while true:
+        echo current_state.board
         echo current_state
-        if current_state.isTerminal:
-            echo "...but {current_state.whoseTurn} can't move!".fmt
-            echo "Good game! {current_state.whoseTurn.other} wins!".fmt
-            break
         if current_state.whoseTurn == Player.A:
             echo "My turn!"
             var best_action = forest.mcts(current_state, 100000, optionsDiffHeuristic)

@@ -10,6 +10,12 @@ import sugar
 import sequtils
 import gameLog
 
+type ConsoleOutput* = object
+    isFirst*: bool = true
+    nPlayouts*: int = 0
+    message*: string = "...thinking..."
+
+
 type RGB = tuple
     r: float
     g: float
@@ -51,27 +57,31 @@ proc show_board(forest: MCTSForest, state: State) =
     let b = state.board
     result = white
     result &= "   1 2 3 4 5 6 7 8 9 a b c d e f g"[0..< (b.width*2+3)]
-    let pWin = forest[state].descendants.mapIt(
-        forest[state.next it][]
-    ).mapIt(it.winFraction(state.whoseTurn)).max
-    result &= " p(win for {state.whoseTurn}) = {pwin:0.3f}".fmt
-    let avgDepth = forest[state].depthSum.float / forest[state].nVisits.float
+    if state in forest:
+        let pWin = forest[state].descendants.mapIt(
+            forest[state.next it][]
+        ).mapIt(it.winFraction(state.whoseTurn)).max
+        result &= " p(win for {state.whoseTurn}) = {pwin:0.3f}".fmt
     result &= "\n" & reset
     const alpha="abcdefghijklmnopqrstuvwxyz"
     for r in uint8(0)..<b.height:
         result &= white & $alpha[r] & reset & "  "
         for c in uint8(0)..<b.width:
-            if (r,c) in forest[state].descendants:
-                let node = forest[state.next (r,c)]
-                result &= bg(nodeToBgcolor(forest, node[], forest[state][]))
+            if state in forest:
+                if (r,c) in forest[state].descendants:
+                    let node = forest[state.next (r,c)]
+                    result &= bg(nodeToBgcolor(forest, node[], forest[state][]))
             result &= $b[(r,c)] & " "
-        if r == 0:
-            result &= white & " brain strength = {forest[state].nVisits} kg".fmt
-        if r == 1:
-            result &= white & " futures foretold = {avgDepth:0.3f}".fmt
+        if state in forest:
+            if r == 0:
+                result &= white & " brain strength = {forest[state].nVisits} kg".fmt
+            if r == 1:
+                let avgDepth = forest[state].depthSum.float / forest[state].nVisits.float
+                result &= white & " futures foretold = {avgDepth:0.3f}".fmt
         result &= "\n"
-    stdout.write result
-    stdout.flushFile()
+    result &= $state & "\n"
+    stderr.write result
+    stderr.flushFile()
 
 proc clear_board(forest: MCTSForest, state: State) =
     stdout.flushFile()
@@ -82,32 +92,56 @@ proc clear_board(forest: MCTSForest, state: State) =
     stdout.flushFile()
     stderr.flushFile()
 
+
+proc show*(
+        console: var ConsoleOutput,
+        forest: var MCTSForest,
+        playouts: int,
+        state: State,
+        ) =
+    console.nPlayouts = playouts
+    if console.isFirst:
+        show_board(forest, state)
+        console.isFirst = false
+    else:
+        eraseLine()
+        cursorUp()
+        eraseLine()
+        cursorUp()
+        clearBoard(forest, state)
+        showBoard(forest, state)
+    stderr.write "{console.message} {playouts.float / 1000.0:.1f}k playouts... ".fmt
+    flushFile(stdout)
+
+proc done*(
+        console: var ConsoleOutput,
+        forest: var MCTSForest,
+        state: State,
+        action: Action,
+        ) =
+    console.isFirst = true
+    stderr.write("\r")
+    stderr.flushFile()
+    stderr.write "Pondered to average depth of {forest[state].depthSum.float / forest[state].nVisits.float:.2f}\n".fmt
+    stderr.write $forest[state][] & "\n"
+    var possible_actions = forest[state].descendants.toSeq
+    for aa in possible_actions:
+        stderr.write " - {aa} -> {forest[state.next aa][]}\n".fmt
+    stderr.write "Selecting {action} -> {forest[state.next action][]}\n".fmt
+    stderr.flushFile()
+
 proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, move: LoggedMove, blockSize: int = 500): Action =
     var i=0
     var n_trials = n_trials
+    var console = ConsoleOutput()
     while i < n_trials:
+        console.show(forest, i, current_state)
         result = forest.mcts(current_state, blockSize, h)
-        if i == 0:
-            stdout.write current_state.board
-        else:
-            eraseLine()
-            cursorUp()
-            clear_board(forest, current_state)
-            show_board(forest, current_state)
         i += blockSize
-        write(stdout, fmt "...thinking... {100.0*i.float/n_trials.float:2.1f}%")
-        flushFile(stdout)
 
         move.logTree(forest, current_state, i)
+    console.done(forest, current_state, result)
 
-    stdout.write("\r")
-    stdout.flushFile()
-    echo "Pondered to average depth of {forest[current_state].depthSum.float / forest[current_state].nVisits.float:.2f}".fmt
-    dump forest[current_state][]
-    var possible_actions = forest[current_state].descendants.toSeq
-    for action in possible_actions:
-        echo " -- ", action, "-> ", forest[current_state.next action][]
-    echo "\nSelecting ", result, ": ", forest[current_state.next result][]
     move.logChosenSquare $result, n_trials
 
 
@@ -134,7 +168,6 @@ when isMainModule:
     #    echo "You have the first move."
     var moveNum = 0
     while true:
-        echo current_state
         var move = game.logMove(moveNum, current_state)
         moveNum += 1
         if current_state.isTerminal:

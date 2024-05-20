@@ -11,11 +11,18 @@ import math
 import bitmask
 import argmax
 import mcts
+import console_pretty_trace
 
 
 for size in [("10k", 10000), ("100k", 100000)]:
     let rolloutstr = size[0]
     let n_trials = size[1]
+    register MCTSStrategy(
+        tag:               "fastest/{rolloutstr}".fmt,
+        selectHeuristic:   noHeuristic,
+        rolloutHeuristic:  noHeuristic,
+        stoppingCriterion: stopAtNTrials n_trials,
+    )
     register MCTSStrategy(
         tag:               "fast/{rolloutstr}".fmt,
         selectHeuristic:   fastHeuristic,
@@ -27,6 +34,13 @@ for size in [("10k", 10000), ("100k", 100000)]:
         selectHeuristic:   optionsDiffHeuristic,
         rolloutHeuristic:  optionsDiffHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+    )
+    register MCTSStrategy(
+        tag:               "odLog/{rolloutstr}".fmt,
+        selectHeuristic:   optionsDiffHeuristic,
+        rolloutHeuristic:  optionsDiffHeuristic,
+        stoppingCriterion: stopAtNTrials n_trials,
+        useLogScoreVisitHeuristicNormalization: true,
     )
     register MCTSStrategy(
         tag:               "hybrid/{rolloutstr}".fmt,
@@ -42,28 +56,32 @@ for size in [("10k", 10000), ("100k", 100000)]:
         useLogScoreVisitHeuristicNormalization: true,
     )
 
-when isMainModule:
+
+proc runMatch(A_strategy="", B_strategy="", size=9) =
+    randomize()
     var
-        strat_A = get(getMCTSStrategy "fast/10k")
+        console = ConsoleOutput()
+        strat_A = get(getMCTSStrategy A_strategy)
         forest_A: MCTSForest
-        strat_B = get(getMCTSStrategy "fast/10k")
+        strat_B = get(getMCTSStrategy B_strategy)
         forest_B: MCTSForest
         currentState = State(
-            board: board(9,9),
+            board: board(size.uint8, size.uint8),
             whoseTurn: if rand(1.0) > 0.5: Player.A else: Player.B,
             capturesToMake: 1
         )
-    while true:
-        echo current_state
-        if current_state.isTerminal:
-            echo "Good game!"
-            break
-        case current_state.whoseTurn:
-        of Player.A:
-            let best_action = mcts(strat_A, forest_A, current_state)
-            current_state = current_state.next best_action
-        of Player.B:
-            let best_action = (
-                mcts(strat_B, forest_B, current_state)
-            )
-            current_state = current_state.next best_action
+        strats = [Player.A: strat_A, Player.B: strat_B]
+        forests = [Player.A: forest_A, Player.B: forest_B]
+    echo strat_A
+    echo strat_B
+    while not currentState.isTerminal:
+        let p = currentState.whoseTurn
+        let bestAction = mcts(strats[p], forests[p], currentState, cb=(i:int)=>
+            console.show(forests[p], i, currentState))
+        console.done(forests[p], currentState, bestAction)
+        currentState = currentState.next bestAction
+        echo currentState.board
+    echo currentState
+
+when isMainModule:
+    import cligen; dispatch runMatch
