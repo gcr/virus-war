@@ -50,6 +50,32 @@ sleep(int(rand(1000.0)))
 var dbConn* = open("game-log.sqlite", "", "", "")
 dbConn.exec(sql("PRAGMA busy_timeout = 2500"))
 dbConn.exec(sql("PRAGMA journal_mode = WAL"))
+dbConn.exec(sql("""
+create view if not exists winners (id, winner, loser) as
+select id, descA, descB from games where winner=='A'
+union all
+select id, descB, descA from games where winner=='B';
+"""))
+
+# Add a view
+dbConn.exec(sql("""
+create view if not exists matchup_counts as
+with normalized_contestants as (
+    select iif(winner >= loser, winner, loser) a,
+    iif(winner >= loser, loser, winner) b
+    from winners
+),
+methods as (
+    select descA method from games union select descB from games
+),
+methodPairs as (
+    select m1.method a, m2.method b from methods m1 join methods m2 where a >= b
+),
+occurrences as (
+    select a, b, count(*) c from normalized_contestants group by a,b
+)
+select mp.a, mp.b, coalesce(o.c, 0) count from methodPairs mp left join occurrences o on (mp.a == o.a and mp.b == o.b) order by count;
+"""))
 
 dbConn.createTables(LoggedTreeSearch(move: LoggedMove(game: LoggedGame())))
 
