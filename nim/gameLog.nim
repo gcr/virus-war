@@ -140,3 +140,17 @@ proc logTree*(move: LoggedMove, forest: MCTSForest, state: mcts.State, playoutNu
             nWinsB: nextNode.nWinsB.int,
         )
         dbConn.insert tree
+
+proc getUncommonMatchup*(): (string, string) =
+    type M = object
+      a: string
+      b: string
+      count: int
+    var results: seq[ref M]
+    results.add new M
+    dbConn.rawSelect(("select a, b, count from matchup_counts limit 20"), results)
+    let m = results.sample[]
+    if rand(1.0) > 0.5:
+        return (m.a, m.b)
+    else:
+        return (m.b, m.a)

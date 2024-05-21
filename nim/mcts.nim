@@ -10,6 +10,7 @@ import options
 import math
 import bitmask
 import argmax
+import re
 
 
 type
@@ -283,11 +284,11 @@ proc register*(strategy: MCTSStrategy) =
     MCTS_REGISTRY.add strategy
 
 proc getMCTSStrategy*(tag: string): Option[MCTSStrategy] =
-    if tag == "":
-        return some(MCTS_REGISTRY.sample)
-    for s in MCTS_REGISTRY:
-        if s.tag == tag:
-            return some(s)
+    var matches = MCTS_REGISTRY.filterIt(
+        find(it.tag, re(tag)) != -1
+    )
+    if matches.len > 0:
+        return some(matches.sample)
 
 ################################################################################
 when isMainModule:

@@ -15,7 +15,7 @@ import console_pretty_trace
 import gameLog
 
 
-for size in [("10k", 10000), ("100k", 100000)]:
+for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
     let rolloutstr = size[0]
     let n_trials = size[1]
     register MCTSStrategy(
@@ -36,6 +36,7 @@ for size in [("10k", 10000), ("100k", 100000)]:
         rolloutHeuristic:  optionsDiffHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
     )
+    #[
     register MCTSStrategy(
         tag:               "odLog/{rolloutstr}".fmt,
         selectHeuristic:   optionsDiffHeuristic,
@@ -43,12 +44,14 @@ for size in [("10k", 10000), ("100k", 100000)]:
         stoppingCriterion: stopAtNTrials n_trials,
         useLogScoreVisitHeuristicNormalization: true,
     )
+    ]#
     register MCTSStrategy(
         tag:               "hybrid/{rolloutstr}".fmt,
         selectHeuristic:   optionsDiffHeuristic,
         rolloutHeuristic:  fastHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
     )
+    #[
     register MCTSStrategy(
         tag:               "hybridlog/{rolloutstr}".fmt,
         selectHeuristic:   optionsDiffHeuristic,
@@ -56,15 +59,19 @@ for size in [("10k", 10000), ("100k", 100000)]:
         stoppingCriterion: stopAtNTrials n_trials,
         useLogScoreVisitHeuristicNormalization: true,
     )
+    ]#
 
 
 proc runMatch(A_strategy="", B_strategy="", size=9) =
     randomize()
+    var A=A_strategy, B=B_strategy
+    if A == "" and B == "":
+        A, B = getUncommonMatchup()
     var
         console = ConsoleOutput()
-        strat_A = get(getMCTSStrategy A_strategy)
+        strat_A = get(getMCTSStrategy A)
         forest_A: MCTSForest
-        strat_B = get(getMCTSStrategy B_strategy)
+        strat_B = get(getMCTSStrategy B)
         forest_B: MCTSForest
         currentState = State(
             board: board(size.uint8, size.uint8),
