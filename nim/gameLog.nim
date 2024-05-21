@@ -17,7 +17,9 @@ type
         boardSize*: int
         date*: int
         winner*: string
-        description*: string
+        descA*: string
+        descB*: string
+
 
     LoggedMove* {.tableName: "moves".} = ref object of Model
         game*: LoggedGame
@@ -25,7 +27,6 @@ type
         board*: string
         chosenSquare*: string
         player*: string
-        totalPlayouts*: int
         time*: float
         thinkDuration*: float
 
@@ -48,15 +49,17 @@ type
 sleep(int(rand(1000.0)))
 var dbConn* = open("game-log.sqlite", "", "", "")
 dbConn.exec(sql("PRAGMA busy_timeout = 2500"))
+dbConn.exec(sql("PRAGMA journal_mode = WAL"))
 
 dbConn.createTables(LoggedTreeSearch(move: LoggedMove(game: LoggedGame())))
 
-proc logGame*(state: State, description: string): LoggedGame =
+proc logGame*(state: State, descA, descB: string): LoggedGame =
     result = LoggedGame(
         boardSize: state.board.width.int,
         date: getTime().toUnix,
         winner: "",
-        description: description,
+        descA: descA,
+        descB: descB,
     )
     dbConn.insert result
 
@@ -80,18 +83,16 @@ proc logMove*(game: LoggedGame, moveNum: int, state: State): LoggedMove =
         board: dumpBoard(state.board),
         chosenSquare: "",
         player: if state.whoseTurn == Player.A: "A" else: "B",
-        totalPlayouts: 0,
         time: getTime().toUnixFloat(),
     )
     dbConn.insert result
 
-proc logChosenSquare*(move: LoggedMove, chosen: string, totalPlayouts: int) =
+proc logChosenSquare*(move: LoggedMove, chosen: string) =
     var newMove = move
-    newMove.totalPlayouts = totalPlayouts
     newMove.chosenSquare = chosen
     newMove.thinkDuration = getTime().toUnixFloat() - newMove.time
     dbConn.update newMove
-    
+
 proc logWinner*(game: var LoggedGame, winner: Player) =
     game.winner = $winner
     dbConn.update game

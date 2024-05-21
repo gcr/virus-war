@@ -12,6 +12,7 @@ import bitmask
 import argmax
 import mcts
 import console_pretty_trace
+import gameLog
 
 
 for size in [("10k", 10000), ("100k", 100000)]:
@@ -72,16 +73,24 @@ proc runMatch(A_strategy="", B_strategy="", size=9) =
         )
         strats = [Player.A: strat_A, Player.B: strat_B]
         forests = [Player.A: forest_A, Player.B: forest_B]
+        nMoves = 0
     echo strat_A
     echo strat_B
+    var game = logGame(currentState, strat_A.tag, strat_B.tag)
     while not currentState.isTerminal:
+        var move = game.logMove(nMoves, currentState)
+        nMoves += 1
         let p = currentState.whoseTurn
-        let bestAction = mcts(strats[p], forests[p], currentState, cb=(i:int)=>
-            console.show(forests[p], i, currentState))
+        let bestAction = mcts(strats[p], forests[p], currentState, cb=proc (i:int) =
+            console.show(forests[p], i, currentState)
+            move.logTree(forests[p], currentState, i)
+        )
         console.done(forests[p], currentState, bestAction)
         currentState = currentState.next bestAction
         echo currentState.board
+        move.logChosenSquare($bestAction)
     echo currentState
+    game.logWinner(currentState.whoseTurn.other)
 
 when isMainModule:
     import cligen; dispatch runMatch

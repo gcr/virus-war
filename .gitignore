@@ -2,3 +2,4 @@
 .godot/
 **.apk*
 .DS_Store
+.direnv

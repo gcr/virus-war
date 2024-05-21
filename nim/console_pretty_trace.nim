@@ -8,6 +8,7 @@ import strutils
 import streams
 import sugar
 import sequtils
+import argmax
 import gameLog
 
 type ConsoleOutput* = object
@@ -57,7 +58,10 @@ proc show_board(forest: MCTSForest, state: State) =
     let b = state.board
     result = white
     result &= "   1 2 3 4 5 6 7 8 9 a b c d e f g"[0..< (b.width*2+3)]
+    var bestAction = (255'u8, 255'u8)
     if state in forest:
+        bestAction = argmax(a, forest[state].descendants):
+          forest[state.next a].nVisits
         let pWin = forest[state].descendants.mapIt(
             forest[state.next it][]
         ).mapIt(it.winFraction(state.whoseTurn)).max
@@ -71,7 +75,11 @@ proc show_board(forest: MCTSForest, state: State) =
                 if (r,c) in forest[state].descendants:
                     let node = forest[state.next (r,c)]
                     result &= bg(nodeToBgcolor(forest, node[], forest[state][]))
-            result &= $b[(r,c)] & " "
+            result &= $b[(r,c)]
+            if (r,c) == best_action:
+                result &= white & "<"
+            else:
+                result &= " "
         if state in forest:
             if r == 0:
                 result &= white & " brain strength = {forest[state].nVisits} kg".fmt
@@ -142,7 +150,7 @@ proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: i
         move.logTree(forest, current_state, i)
     console.done(forest, current_state, result)
 
-    move.logChosenSquare $result, n_trials
+    move.logChosenSquare $result
 
 
 when isMainModule:

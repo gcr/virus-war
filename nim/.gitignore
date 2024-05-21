@@ -2,9 +2,9 @@ main
 profile_results.txt
 mcts
 main
-mcts
+mcts_library
 console_pretty_trace
-game-log.sqlite
+*.sqlite*
 bitmask
 mcts-no-heuristic
 mcts.dSYM
