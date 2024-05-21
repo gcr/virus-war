@@ -60,6 +60,24 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         useLogScoreVisitHeuristicNormalization: true,
     )
     ]#
+    register MCTSStrategy(
+        tag:               "woo/{rolloutstr}".fmt,
+        selectHeuristic:   weightOpponentOptionsHeuristic,
+        rolloutHeuristic:  weightOpponentOptionsHeuristic,
+        stoppingCriterion: stopAtNTrials n_trials,
+    )
+    register MCTSStrategy(
+        tag:               "moo/{rolloutstr}".fmt,
+        selectHeuristic:   minOpponentOptionsHeuristic,
+        rolloutHeuristic:  minOpponentOptionsHeuristic,
+        stoppingCriterion: stopAtNTrials n_trials,
+    )
+    register MCTSStrategy(
+        tag:               "fastMoo/{rolloutstr}".fmt,
+        selectHeuristic:   minOpponentOptionsHeuristic,
+        rolloutHeuristic:  fastHeuristic,
+        stoppingCriterion: stopAtNTrials n_trials,
+    )
 
 
 proc runMatch(A_strategy="", B_strategy="", size=9) =
@@ -69,9 +87,9 @@ proc runMatch(A_strategy="", B_strategy="", size=9) =
         A, B = getUncommonMatchup()
     var
         console = ConsoleOutput()
-        strat_A = get(getMCTSStrategy A)
+        strat_A = get(getMCTSStrategy A_strategy)
         forest_A: MCTSForest
-        strat_B = get(getMCTSStrategy B)
+        strat_B = get(getMCTSStrategy B_strategy)
         forest_B: MCTSForest
         currentState = State(
             board: board(size.uint8, size.uint8),

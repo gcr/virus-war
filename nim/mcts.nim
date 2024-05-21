@@ -118,6 +118,21 @@ proc optionsDiffHeuristic*(state: State, action: Action): float =
         nDiff = (nMyMoves - nYourMoves)
     return nDiff.float + rand(1.0)
 
+proc minOpponentOptionsHeuristic*(state: State, action: Action): float =
+    var
+        proposedState = state.next action
+        #nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).len
+        nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).len
+        nDiff = (- nYourMoves)
+    return nDiff.float + rand(1.0)
+proc weightOpponentOptionsHeuristic*(state: State, action: Action): float =
+    var
+        proposedState = state.next action
+        nMyMoves = proposedState.board.possibleMovesFor(state.whoseTurn).len
+        nYourMoves = proposedState.board.possibleMovesFor(state.whoseTurn.other).len
+        nDiff = (nMyMoves - 5*nYourMoves)
+    return nDiff.float + rand(1.0)
+
 proc noHeuristic*(state: State, action: Action): float =
     return 0.0 + rand(1.0)
 
