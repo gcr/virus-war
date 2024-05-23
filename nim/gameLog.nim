@@ -8,7 +8,7 @@ import random
 import sets
 import sequtils
 import std/[options, logging]
-import main
+import board
 import mcts
 addHandler newConsoleLogger(fmtStr = "")
 

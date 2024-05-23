@@ -10,3 +10,4 @@ mcts-no-heuristic
 mcts.dSYM
 nimcache
 simpleStrategies
+runArenaMatch

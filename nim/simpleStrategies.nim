@@ -1,4 +1,4 @@
-import main
+import board
 import bitmask
 import mcts
 import sugar

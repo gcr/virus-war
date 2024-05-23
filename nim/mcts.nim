@@ -1,4 +1,4 @@
-import main
+import board
 import tables
 import hashes
 import sugar

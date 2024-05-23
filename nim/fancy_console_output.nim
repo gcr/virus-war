@@ -1,4 +1,4 @@
-import main
+import board
 import mcts
 import terminal
 import tables
