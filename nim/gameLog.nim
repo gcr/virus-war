@@ -5,7 +5,8 @@ import times
 import tables
 import os
 import random
-
+import sets
+import sequtils
 import std/[options, logging]
 import main
 import mcts
@@ -56,6 +57,10 @@ select id, descA, descB from games where winner=='A'
 union all
 select id, descB, descA from games where winner=='B';
 """))
+dbConn.exec(sql("""
+create view if not exists methods as
+select descA method from games union select descB from games;
+"""))
 
 # Add a view
 dbConn.exec(sql("""
@@ -64,9 +69,6 @@ with normalized_contestants as (
     select iif(winner >= loser, winner, loser) a,
     iif(winner >= loser, loser, winner) b
     from winners
-),
-methods as (
-    select descA method from games union select descB from games
 ),
 methodPairs as (
     select m1.method a, m2.method b from methods m1 join methods m2 where a >= b
@@ -147,9 +149,17 @@ proc getUncommonMatchup*(): (string, string) =
       b: string
       count: int
     var results: seq[ref M]
+    let methods = getMCTSTags()
     results.add new M
-    dbConn.rawSelect(("select a, b, count from matchup_counts limit 20"), results)
+    dbConn.rawSelect(("select a, b, count from matchup_counts order by count"), results)
+    echo "Getting uncommon matchup"
+    results = results.filterIt(
+        it.a in methods and it.b in methods
+    )[0..20]
+    for r in results:
+        echo r[]
     let m = results.sample[]
+    echo "Selected ", m
     if rand(1.0) > 0.5:
         return (m.a, m.b)
     else:

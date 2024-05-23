@@ -82,14 +82,17 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
 
 proc runMatch(A_strategy="", B_strategy="", size=9) =
     randomize()
-    var A=A_strategy, B=B_strategy
+    var A=A_strategy
+    var B=B_strategy
     if A == "" and B == "":
-        A, B = getUncommonMatchup()
+        (A, B) = getUncommonMatchup()
+        dump A
+        dump B
     var
         console = ConsoleOutput()
-        strat_A = get(getMCTSStrategy A_strategy)
+        strat_A = get(getMCTSStrategy A)
         forest_A: MCTSForest
-        strat_B = get(getMCTSStrategy B_strategy)
+        strat_B = get(getMCTSStrategy B)
         forest_B: MCTSForest
         currentState = State(
             board: board(size.uint8, size.uint8),

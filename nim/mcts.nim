@@ -11,7 +11,7 @@ import math
 import bitmask
 import argmax
 import re
-
+import sets
 
 type
     State* = object
@@ -304,6 +304,8 @@ proc getMCTSStrategy*(tag: string): Option[MCTSStrategy] =
     )
     if matches.len > 0:
         return some(matches.sample)
+
+proc getMCTSTags*(): HashSet[string] = MCTS_REGISTRY.mapIt(it.tag).toHashSet
 
 ################################################################################
 when isMainModule:
