@@ -79,3 +79,12 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         stoppingCriterion: stopAtNTrials n_trials,
     )
 
+for (rolloutstr, n_trials) in [("10k", 10000), ("25k", 25000), ("50k", 50000)]:
+    for c in [1.0, 0.75, 1.5, 2.0, 0.1]:
+        register MCTSStrategy(
+            tag:               "moo/c={c}/{rolloutstr}".fmt,
+            selectHeuristic:   minOpponentOptionsHeuristic,
+            rolloutHeuristic:  minOpponentOptionsHeuristic,
+            stoppingCriterion: stopAtNTrials n_trials,
+            cParam:            c,
+        )
