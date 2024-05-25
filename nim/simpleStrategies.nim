@@ -8,6 +8,7 @@ import options
 import mcts_library
 import sets
 import strategyUtils
+import strformat
 
 proc allStonePlacements(whoseTurn: Player, s: State, cb: (State, seq[Action])->void, path: seq[Action]= @[]) =
     if s.whoseTurn != whoseTurn:
@@ -16,13 +17,16 @@ proc allStonePlacements(whoseTurn: Player, s: State, cb: (State, seq[Action])->v
         for action in s.actions:
             allStonePlacements(whoseTurn, s.next action, cb, path & @[action])
 
-proc bestNextAction(s: State): Action =
+proc bestNextAction(ss: State): Action =
     ## pick the best state
     var states: seq[(State, seq[Action])]
-    allStonePlacements(s.whoseTurn, s, (s:State, path: seq[Action]) => states.add (s, path))
+    allStonePlacements(ss.whoseTurn, ss, (s:State, path: seq[Action]) => states.add (s, path))
     dump states.len
     let bestTup = argmax(s, states):
-        -s[0].board.possibleMovesFor(s[0].whoseTurn).len.float + rand(1.0)
+        -s[0].board.possibleMovesFor(ss.whoseTurn.other).len.float + rand(1.0)
+    echo "Selecting best state with {bestTup[0].board.possibleMovesFor(ss.whoseTurn.other).len} moves for opponent".fmt
+    #echo bestTup[0].board
+    #echo bestTup[0]
     bestTup[1][0]
 
 # Implementation
@@ -32,7 +36,7 @@ method nextMove*(strat: Strategy, currentState: State, cb: StrategyMoveCallback)
 
 register SimpleMooStrategy(
     tag: "moo/one",
-    selectOnRandom: false,
+    selectOnRandom: true,
 )
 
 
@@ -44,6 +48,8 @@ when isMainModule:
         whoseTurn: Player.A,
         capturesToMake: 1
     )
+    cs = cs.next cs.bestNextAction
+    echo "--"
     cs = cs.next cs.bestNextAction
     cs = cs.next cs.bestNextAction
     cs = cs.next cs.bestNextAction
