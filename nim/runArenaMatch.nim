@@ -38,18 +38,19 @@ proc getUncommonMatchup*(): (string, string) =
     for i in methods:
         for j in methods:
             if get(getStrategy(i)).selectOnRandom and get(getStrategy(j)).selectOnRandom:
-                if i < j:
+                if i <= j:
                     counts[(i,j)] = 1
     for r in results:
         if get(getStrategy(r.a)).selectOnRandom and get(getStrategy(r.b)).selectOnRandom:
-            if r.a < r.b:
+            if r.a <= r.b:
                 counts.inc (r.a,r.b), r.count
             else:
                 counts.inc (r.b,r.a), r.count
             #echo r[]
     let (pair, c) = counts.pairs.toSeq.sortedByIt(it[1])[0..<min(counts.len, 20)].sample
-    echo "Counts"
-    echo counts
+    #echo "Counts"
+    #echo counts
+    echo "Small Counts:", counts.pairs.toSeq.sortedByIt(it[1])[0..<min(counts.len, 20)]
     echo "Selected ", pair
     echo counts[pair]
     if rand(1.0) > 0.5:
