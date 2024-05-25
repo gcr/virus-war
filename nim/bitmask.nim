@@ -1,6 +1,8 @@
 import hashes
 import random
 import bitops
+import sugar
+import sets
 
 const useNeon {.booldefine.} = true
 

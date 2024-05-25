@@ -13,6 +13,7 @@ import argmax
 import mcts
 import fancy_console_output
 import gameLog
+import strategyUtils
 
 
 for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
@@ -23,18 +24,21 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         selectHeuristic:   noHeuristic,
         rolloutHeuristic:  noHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     register MCTSStrategy(
         tag:               "fast/{rolloutstr}".fmt,
         selectHeuristic:   fastHeuristic,
         rolloutHeuristic:  fastHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     register MCTSStrategy(
         tag:               "od/{rolloutstr}".fmt,
         selectHeuristic:   optionsDiffHeuristic,
         rolloutHeuristic:  optionsDiffHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     #[
     register MCTSStrategy(
@@ -43,6 +47,7 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         rolloutHeuristic:  optionsDiffHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
         useLogScoreVisitHeuristicNormalization: true,
+        selectOnRandom:    true,
     )
     ]#
     register MCTSStrategy(
@@ -50,6 +55,7 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         selectHeuristic:   optionsDiffHeuristic,
         rolloutHeuristic:  fastHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     #[
     register MCTSStrategy(
@@ -58,6 +64,7 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         rolloutHeuristic:  fastHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
         useLogScoreVisitHeuristicNormalization: true,
+        selectOnRandom:    true,
     )
     ]#
     register MCTSStrategy(
@@ -65,18 +72,21 @@ for size in [("10k", 10000), ("50k", 50000), ("100k", 100000)]:
         selectHeuristic:   weightOpponentOptionsHeuristic,
         rolloutHeuristic:  weightOpponentOptionsHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     register MCTSStrategy(
         tag:               "moo/{rolloutstr}".fmt,
         selectHeuristic:   minOpponentOptionsHeuristic,
         rolloutHeuristic:  minOpponentOptionsHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
     register MCTSStrategy(
         tag:               "fastMoo/{rolloutstr}".fmt,
         selectHeuristic:   minOpponentOptionsHeuristic,
         rolloutHeuristic:  fastHeuristic,
         stoppingCriterion: stopAtNTrials n_trials,
+        selectOnRandom:    true,
     )
 
 for (rolloutstr, n_trials) in [("10k", 10000), ("25k", 25000), ("50k", 50000)]:
@@ -87,4 +97,5 @@ for (rolloutstr, n_trials) in [("10k", 10000), ("25k", 25000), ("50k", 50000)]:
             rolloutHeuristic:  minOpponentOptionsHeuristic,
             stoppingCriterion: stopAtNTrials n_trials,
             cParam:            c,
+            selectOnRandom:    true,
         )

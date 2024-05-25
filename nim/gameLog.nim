@@ -11,6 +11,7 @@ import std/[options, logging]
 import board
 import mcts
 import algorithm
+import strategyUtils
 addHandler newConsoleLogger(fmtStr = "")
 
 
@@ -45,7 +46,6 @@ type
         nVisits*: int
         nWinsA*: int
         nWinsB*: int
-
 
 
 sleep(int(rand(1000.0)))
@@ -144,38 +144,3 @@ proc logTree*(move: LoggedMove, forest: MCTSForest, state: mcts.State, playoutNu
         )
         dbConn.insert tree
 
-proc getUncommonMatchup*(): (string, string) =
-    type M = object
-      a: string
-      b: string
-      count: int
-    var results: seq[ref M]
-    let methods = getMCTSTags()
-    results.add new M
-    dbConn.rawSelect(("select a, b, count from matchup_counts order by count"), results)
-    echo "Getting uncommon matchup"
-    results = results.filterIt(
-        it.a in methods and it.b in methods
-    )
-    # Sometimes we may have a new method for us
-    # but isn't reflected in the sqlite table.
-    # We'll have to populate all pairs ourselves.
-    var counts: CountTable[(string, string)]
-    for i in methods:
-        for j in methods:
-            if i < j:
-                counts[(i,j)] = 1
-    for r in results:
-        if r.a < r.b:
-            counts.inc (r.a,r.b), r.count
-        else:
-            counts.inc (r.b,r.a), r.count
-        echo r[]
-    let (pair, c) = counts.pairs.toSeq.sortedByIt(it[1])[0..<20].sample
-    echo counts
-    echo "Selected ", pair
-    echo counts[pair]
-    if rand(1.0) > 0.5:
-        return pair
-    else:
-        return (pair[1], pair[0])

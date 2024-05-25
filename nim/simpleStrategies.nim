@@ -7,21 +7,34 @@ import random
 import options
 import mcts_library
 import sets
+import strategyUtils
 
-proc allStonePlacements(whoseTurn: Player, s: State, cb: (State)->void) =
+proc allStonePlacements(whoseTurn: Player, s: State, cb: (State, seq[Action])->void, path: seq[Action]= @[]) =
     if s.whoseTurn != whoseTurn:
-        cb(s)
+        cb(s, path)
     else:
         for action in s.actions:
-            allStonePlacements(whoseTurn, s.next action, cb)
+            allStonePlacements(whoseTurn, s.next action, cb, path & @[action])
 
-proc bestNextState(s: State): State =
+proc bestNextAction(s: State): Action =
     ## pick the best state
-    var states: seq[State]
-    allStonePlacements(s.whoseTurn, s, (s:State) => states.add s)
+    var states: seq[(State, seq[Action])]
+    allStonePlacements(s.whoseTurn, s, (s:State, path: seq[Action]) => states.add (s, path))
     dump states.len
-    return argmax(s, states):
-        -s.board.possibleMovesFor(s.whoseTurn).len.float + rand(1.0)
+    let bestTup = argmax(s, states):
+        -s[0].board.possibleMovesFor(s[0].whoseTurn).len.float + rand(1.0)
+    bestTup[1][0]
+
+# Implementation
+type SimpleMooStrategy = ref object of Strategy
+method nextMove*(strat: Strategy, currentState: State, cb: StrategyMoveCallback): Action =
+    return bestNextAction(currentState)
+
+register SimpleMooStrategy(
+    tag: "moo/one",
+    selectOnRandom: false,
+)
+
 
 
 when isMainModule:
@@ -31,22 +44,22 @@ when isMainModule:
         whoseTurn: Player.A,
         capturesToMake: 1
     )
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
-    cs = cs.bestNextState
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
+    cs = cs.next cs.bestNextAction
     var possibleStates: HashSet[State]
     echo cs.board
     echo cs
-    allStonePlacements(cs.whoseTurn, cs, (s:State)=>possibleStates.incl s)
+    allStonePlacements(cs.whoseTurn, cs, (s:State, a:seq[Action])=>possibleStates.incl s)
     var possibleReplies: HashSet[State]
     dump possibleStates.len
     for s in possibleStates:
-        allStonePlacements(s.whoseTurn, s, (s2:State)=>possibleReplies.incl s2)
+        allStonePlacements(s.whoseTurn, s, (s2:State, a:seq[Action])=>possibleReplies.incl s2)
     var possibleResponses: HashSet[State]
     dump possibleReplies.len
     var count = 0
@@ -54,7 +67,7 @@ when isMainModule:
         count += 1
         if count mod 10000 == 0:
             echo count
-        allStonePlacements(s.whoseTurn, s, (s2:State)=>possibleResponses.incl s2)
+        allStonePlacements(s.whoseTurn, s, (s2:State, a:seq[Action])=>possibleResponses.incl s2)
     dump possibleResponses.len
 
 

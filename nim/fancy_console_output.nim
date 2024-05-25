@@ -104,8 +104,8 @@ proc clear_board(forest: MCTSForest, state: State) =
 proc show*(
         console: var ConsoleOutput,
         forest: var MCTSForest,
-        playouts: int,
         state: State,
+        playouts: int,
         ) =
     console.nPlayouts = playouts
     if console.isFirst:
@@ -138,20 +138,31 @@ proc done*(
     stderr.write "Selecting {action} -> {forest[state.next action][]}\n".fmt
     stderr.flushFile()
 
-proc mctsWithFeedback*(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, move: LoggedMove, blockSize: int = 500): Action =
+proc mctsWithFeedback(forest: var MCTSForest, current_state: State, n_trials: int = 100000, h: HeuristicCallable, blockSize: int = 500): Action =
+    ## Don't use this outside this function, this is only for show
     var i=0
     var n_trials = n_trials
     var console = ConsoleOutput()
     while i < n_trials:
-        console.show(forest, i, current_state)
+        if i > 0:
+            console.show(forest, current_state, i)
         result = forest.mcts(current_state, blockSize, h)
         i += blockSize
 
-        move.logTree(forest, current_state, i)
+        #move.logTree(forest, current_state, i)
     console.done(forest, current_state, result)
 
-    move.logChosenSquare $result
+    #move.logChosenSquare $result
 
+
+proc showMoveCounts(forest: MCTSForest, state: State): CountTable[int] =
+    proc iterate(c: var CountTable[int], state: State, depth: int) =
+        if state in forest:
+            for action in forest[state].descendants:
+                iterate(c, state.next action, depth+1)
+        else:
+            c.inc depth
+    iterate(result, state, 0)
 
 when isMainModule:
     randomize()
@@ -159,7 +170,7 @@ when isMainModule:
     var forestB: MCTSForest
     var current_state = State(
         board: board(9,9),
-        whoseTurn: Player.A,
+        whoseTurn: Player.B,
         capturesToMake: 1
     )
     #for loc in [(10, 1)]:
@@ -167,39 +178,43 @@ when isMainModule:
     #for loc in [(0, 9), (1,8), (2,7)]:
     #    current_state.board[loc] = Cell.LiveB
 
-    var game = logGame(current_state,
-    "A: slow heuristic and slow rollout, B: fast select heuristic and fast rollout"
-    )
+    #var game = logGame(current_state,
+    #"A: slow heuristic and slow rollout, B: fast select heuristic and fast rollout"
+    #)
 
     #echo "You're player ", Cell.LiveB
     #if current_state.whoseTurn == Player.B:
     #    echo "You have the first move."
     var moveNum = 0
     while true:
-        var move = game.logMove(moveNum, current_state)
+        echo current_state.board
+        echo current_state
+        #var move = game.logMove(moveNum, current_state)
         moveNum += 1
         if current_state.isTerminal:
             echo "...but {current_state.whoseTurn} can't move!".fmt
             echo "Good game! {current_state.whoseTurn.other} wins!".fmt
-            game.logWinner current_state.whoseTurn.other
+            #game.logWinner current_state.whoseTurn.other
             break
         if current_state.whoseTurn == Player.A:
             #echo "My turn!"
             var best_action = forest.mctsWithFeedback(
                 current_state,
-                100000,
-                optionsDiffHeuristic,
-                move,
+                50000,
+                minOpponentOptionsHeuristic,
+
             )
             current_state = current_state.next best_action
+            echo "-- Move counts --"
+            echo showMoveCounts(forest, current_state)
         else:
             #echo "Your turn!"
-            #var loc = current_state.board.readLocFromStdin(Player.B)
-            #current_state = current_state.next loc
-            var best_action = forestB.mctsWithFeedback(
-                current_state,
-                100000,
-                fastHeuristic,
-                move,
-            )
-            current_state = current_state.next best_action
+            var loc = current_state.board.readLocFromStdin(Player.B)
+            current_state = current_state.next loc
+            #var best_action = forestB.mctsWithFeedback(
+            #    current_state,
+            #    100000,
+            #    fastHeuristic,
+            #    move,
+            #)
+            #current_state = current_state.next best_action

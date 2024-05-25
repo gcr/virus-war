@@ -249,63 +249,11 @@ func stopAtNTrials*(maxTrials: int): StoppingCriterion =
       n >= maxTrials
 
 
-type FinalSelectHeuristicCallable = (var MCTSForest, State) -> Action
+type FinalSelectHeuristicCallable* = (var MCTSForest, State) -> Action
 
 proc mostVisitedNode*(forest: var MCTSForest, currentState: State): Action =
     return argmax(action, forest[currentState].descendants):
         forest[currentState.next action].nVisits
-
-################################################################################
-## MCTS Strategies
-type MCTSStrategy* = object
-    tag*: string
-    description*: string
-    selectHeuristic*: HeuristicCallable
-    rolloutHeuristic*: HeuristicCallable
-    stoppingCriterion*: StoppingCriterion
-    cParam*: float = 1.0
-    useLogScoreVisitHeuristicNormalization*: bool = false
-    finalSelection*: FinalSelectHeuristicCallable = mostVisitedNode
-
-proc mcts*(
-        strat: MCTSStrategy,
-        forest: var MCTSForest,
-        currentState: var State,
-        blockSize: int = 1000,
-        cb: (int)->void = proc(i: int) = discard,
-        ): Action =
-    var i = 0
-    while not strat.stoppingCriterion(forest, currentState, i):
-        for j in 0 ..< blockSize:
-            let selectedState = forest.selectAndExpand(
-                currentState,
-                strat.selectHeuristic,
-                strat.cParam,
-                strat.useLogScoreVisitHeuristicNormalization
-            )
-            forest.rollout(selectedState, strat.rolloutHeuristic)
-            i += 1
-        cb(i)
-    strat.finalSelection(forest, currentState)
-
-
-var MCTS_REGISTRY: seq[MCTSStrategy]
-proc register*(strategy: MCTSStrategy) =
-    for other in MCTS_REGISTRY:
-        if strategy.tag == other.tag:
-            raise newException(ValueError, "Duplicate tag")
-        if strategy.description != "" and strategy.description == other.description:
-            raise newException(ValueError, "Duplicate description")
-    MCTS_REGISTRY.add strategy
-
-proc getMCTSStrategy*(tag: string): Option[MCTSStrategy] =
-    var matches = MCTS_REGISTRY.filterIt(
-        find(it.tag, re(tag)) != -1
-    )
-    if matches.len > 0:
-        return some(matches.sample)
-
-proc getMCTSTags*(): HashSet[string] = MCTS_REGISTRY.mapIt(it.tag).toHashSet
 
 ################################################################################
 when isMainModule:
