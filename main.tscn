@@ -1,58 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://b5grplmbvymqy"]
+[gd_scene load_steps=9 format=3 uid="uid://b5grplmbvymqy"]
 
 [ext_resource type="Script" path="res://Game.gd" id="1_fbks1"]
 [ext_resource type="PackedScene" uid="uid://crmntsc1fsy5o" path="res://Button.tscn" id="1_id7y6"]
+[ext_resource type="Theme" uid="uid://te5lk6s4w6bx" path="res://resources/default_theme.tres" id="1_yogjk"]
 [ext_resource type="Script" path="res://RotatedTurnButton.gd" id="2_4mxhy"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5rjte"]
-bg_color = Color(1, 1, 1, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0, 0, 0, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.0901961)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mgqis"]
-bg_color = Color(1, 1, 1, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0, 0, 0, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.0901961)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6j7kh"]
-bg_color = Color(0, 0, 0, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0, 0, 0, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.0901961)
-
-[sub_resource type="Theme" id="Theme_01yid"]
-default_font_size = 64
-Button/colors/font_color = Color(0, 0, 0, 1)
-Button/colors/font_focus_color = Color(0, 0, 0, 1)
-Button/colors/font_hover_color = Color(0, 0, 0, 1)
-Button/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
-Button/colors/font_pressed_color = Color(1, 1, 1, 1)
-Button/styles/hover = SubResource("StyleBoxFlat_5rjte")
-Button/styles/normal = SubResource("StyleBoxFlat_mgqis")
-Button/styles/pressed = SubResource("StyleBoxFlat_6j7kh")
+[ext_resource type="PackedScene" uid="uid://dd7u42rrrnpyc" path="res://cpu.tscn" id="5_w1tfe"]
+[ext_resource type="FontFile" uid="uid://drak1xk84nses" path="res://addons/fontawesome/fonts/fa-solid-900.woff2" id="6_kl8mg"]
+[ext_resource type="Script" path="res://addons/fontawesome/FontAwesome.gd" id="7_ata4x"]
+[ext_resource type="PackedScene" uid="uid://b5cnq56c6awjh" path="res://config.tscn" id="8_xgewo"]
 
 [node name="Game" type="VBoxContainer"]
 anchors_preset = 15
@@ -64,17 +19,22 @@ offset_right = -32.0
 offset_bottom = -64.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_01yid")
+theme = ExtResource("1_yogjk")
 theme_override_constants/separation = 64
 alignment = 1
 script = ExtResource("1_fbks1")
 
-[node name="B_turn_button" type="Button" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="B_turn_button" type="Button" parent="HBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 128)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"TurnButton"
 toggle_mode = true
 action_mode = 0
 script = ExtResource("2_4mxhy")
@@ -95,500 +55,418 @@ columns = 11
 
 [node name="Button" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button2" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button3" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button4" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button5" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button6" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button7" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button8" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button9" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button10" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button11" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
 state = 2
-whose_turn = ""
 
 [node name="Button12" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button13" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button14" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button15" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button16" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button17" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button18" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button19" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button20" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button21" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button22" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button23" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button24" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button25" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button26" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button27" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button28" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button29" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button30" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button31" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button32" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button33" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button34" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button35" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button36" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button37" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button38" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button39" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button40" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button41" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button42" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button43" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button44" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button45" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button46" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button47" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button48" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button49" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button50" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button51" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button52" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button53" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button54" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button55" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button56" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button57" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button58" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button59" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button60" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button61" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button62" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button63" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button64" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button65" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button66" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button67" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button68" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button69" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button70" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button71" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button72" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button73" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button74" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button75" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button76" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button77" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button78" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button79" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button80" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button81" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button82" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button83" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button84" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button85" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button86" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button87" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button88" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button89" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button90" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button91" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button92" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button93" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button94" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button95" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button96" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button97" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button98" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button99" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button100" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button101" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button102" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button103" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button104" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button105" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button106" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button107" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button108" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button109" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button110" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button111" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
 state = 1
-whose_turn = ""
 
 [node name="Button112" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button113" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button114" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button115" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button116" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button117" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button118" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button119" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button120" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
 [node name="Button121" parent="AspectRatioContainer/GridContainer" instance=ExtResource("1_id7y6")]
 layout_mode = 2
-whose_turn = ""
 
-[node name="A_turn_button" type="Button" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 64
+
+[node name="A_turn_button" type="Button" parent="HBoxContainer2"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 128)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_type_variation = &"TurnButton"
 toggle_mode = true
 action_mode = 0
 script = ExtResource("2_4mxhy")
 label_offset = 128.0
 
-[connection signal="pressed" from="B_turn_button" to="." method="swap_turn_button_pressed"]
-[connection signal="pressed" from="A_turn_button" to="." method="swap_turn_button_pressed"]
+[node name="ConfigButton" type="Button" parent="HBoxContainer2"]
+custom_minimum_size = Vector2(128, 2.08165e-12)
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="FontAwesome" type="Label" parent="HBoxContainer2/ConfigButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+auto_translate = false
+localize_numeral_system = false
+theme_override_fonts/font = ExtResource("6_kl8mg")
+theme_override_font_sizes/font_size = 64
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("7_ata4x")
+icon_size = 64
+icon_name = "gear"
+
+[node name="CPU" parent="." instance=ExtResource("5_w1tfe")]
+visible = false
+think_per_frame = 500
+n_thinks_total = 5000
+
+[node name="Config" parent="." instance=ExtResource("8_xgewo")]
+visible = false
+
+[connection signal="pressed" from="HBoxContainer/B_turn_button" to="." method="swap_turn_button_pressed"]
+[connection signal="pressed" from="HBoxContainer2/A_turn_button" to="." method="swap_turn_button_pressed"]
+[connection signal="pressed" from="HBoxContainer2/ConfigButton" to="." method="think_cpu_button"]
+[connection signal="finished" from="CPU" to="." method="_on_cpu_finished"]

@@ -1,0 +1,157 @@
+[gd_scene load_steps=3 format=3 uid="uid://b5cnq56c6awjh"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_3s7fq"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_2xjju"]
+
+[node name="Config" type="CanvasLayer"]
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_3s7fq")
+
+[node name="PanelContainer" type="PanelContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.3
+anchor_right = 0.5
+anchor_bottom = 0.3
+grow_horizontal = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="Panel/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"HeadingLabel"
+text = "Settings"
+
+[node name="Container" type="MarginContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(2.08165e-12, 2.08165e-12)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="Game mode" type="MarginContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="Game mode" type="Label" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/Game mode"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Game mode"
+
+[node name="TabContainer" type="TabContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container"]
+layout_mode = 2
+theme_type_variation = &"PanellessTabContainer"
+theme_override_constants/side_margin = 230
+current_tab = 2
+clip_tabs = false
+
+[node name="Freeform" type="Control" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="PvP" type="Control" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Vs CPU" type="PanelContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 2.08165e-12)
+layout_mode = 2
+text = "Strength"
+
+[node name="Button" type="CheckBox" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+button_pressed = true
+button_group = SubResource("ButtonGroup_2xjju")
+text = "Easy
+"
+
+[node name="Button2" type="CheckBox" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+button_group = SubResource("ButtonGroup_2xjju")
+text = "Medium"
+
+[node name="Button3" type="CheckBox" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/Container/TabContainer/Vs CPU/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+button_group = SubResource("ButtonGroup_2xjju")
+text = "Hard
+"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Label" type="Label" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(230, 2.08165e-12)
+layout_mode = 2
+text = "New board"
+
+[node name="5x5" type="Button" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "5x5"
+
+[node name="8x8" type="Button" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "8x8
+"
+
+[node name="9x9" type="Button" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "9x9
+"
+
+[node name="11x11" type="Button" parent="Panel/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "11x11
+"
+
+[node name="Control" type="Control" parent="Panel/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="Panel/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 2.08165e-12)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "OK"

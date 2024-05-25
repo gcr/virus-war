@@ -9,7 +9,7 @@ enum Glyph {X, O}
 
 func _draw() -> void:
 	var turn_string = "Swap Turn"
-	var sz = get_theme_default_font_size()
+	var sz = get_theme_font_size("font_size")
 	var h = get_rect().size.y
 	var w = get_rect().size.x
 	var c = get_theme_color("font_pressed_color" if button_pressed else "font_color")

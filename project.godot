@@ -23,6 +23,14 @@ window/size/viewport_height=1872
 window/stretch/aspect="ignore"
 window/handheld/orientation=1
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/fontawesome/plugin.cfg")
+
+[gui]
+
+theme/custom="res://resources/default_theme.tres"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

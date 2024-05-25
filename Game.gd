@@ -1,5 +1,7 @@
 extends Control
 
+class_name Game
+
 ## Whose turn.
 enum Turn {A, B}
 @export var turn: Turn = Turn.A:
@@ -67,5 +69,9 @@ func advance_state(node: VirusButton) -> void:
 func swap_turn_button_pressed() -> void:
 	turn = 1-turn
 
+func think_cpu_button() -> void:
+	$CPU.start_mcts(self)
 
 
+func _on_cpu_finished(bestCell: PackedByteArray) -> void:
+	advance_state(get_cell(bestCell[0], bestCell[1]))

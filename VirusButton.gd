@@ -73,6 +73,15 @@ func _ready() -> void:
 		button_pressed = is_dead
 
 		release_focus()
+		focus_entered.connect(_on_focus_entered)
+		focus_exited.connect(_on_focus_exited)
+		#action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
+
+func _on_focus_entered() -> void:
+	z_index = 10
+func _on_focus_exited() -> void:
+	print("Focus exited")
+	z_index = 0
 
 func _draw() -> void:
 	var w = get_rect().size.x
@@ -89,6 +98,9 @@ func _draw() -> void:
 		draw_line(center + Vector2(label_size,-label_size), center + Vector2(-label_size, label_size), label_color, label_thickness, true)
 	elif owned_by == "B":
 		draw_arc(center, label_size, 0, TAU, 64, label_color, label_thickness, true)
+
+	if has_focus():
+		return
 
 	# Draw T/B/R/L lines between regions
 	var maybe_line = func(v1, v2, offset_v1, offset_v2, other_node):

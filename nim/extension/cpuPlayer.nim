@@ -7,17 +7,21 @@ type CpuPlayer* = ref object of Node
   forest: MCTSForest
   state: State
 
-proc runMcts*(self: CpuPlayer, n_rounds: int): PackedByteArray {.exportGd: "mcts".} =
+proc runMcts*(self: CpuPlayer, n_rounds: int): PackedByteArray {.exportGd: "run_mcts".} =
+  echo "Running MCTS ..."
   let bestAction = mcts(self.forest, self.state, n_rounds, minOpponentOptionsHeuristic)
+  echo bestAction
   discard result.append(Int(bestAction.r))
   discard result.append(Int(bestAction.c))
+  echo "Result: ", result
 
-proc resetState*(self: CpuPlayer, whoseTurn: int, bSize: int, board: PackedByteArray) {.exportGd: "reset_state".} =
+proc resetState*(self: CpuPlayer, whoseTurn: int, capturesToMake: int, bSize: int, board: PackedByteArray) {.exportGd: "reset_state".} =
   self.forest = MCTSForest()
   if whoseTurn == 0:
     self.state.whoseTurn = Player.A
   else:
     self.state.whoseTurn = Player.B
+  self.state.capturesToMake = capturesToMake.uint8
   self.state.board = board(bSize.uint8,bSize.uint8)
   if board.size == bSize*bSize:
     for i in 0 ..< board.size:
