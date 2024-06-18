@@ -40,6 +40,15 @@ register SimpleMooStrategy(
 )
 
 
+type StdinStrategy = ref object of Strategy
+method nextMove*(strat: StdinStrategy, currentState: State, cb: StrategyMoveCallback): Action =
+    echo currentState.board
+    echo currentState
+    currentState.board.readLocFromStdin(currentState.whoseTurn)
+register StdinStrategy(
+    tag: "player",
+    selectOnRandom: false
+)
 
 when isMainModule:
     randomize()
