@@ -17,28 +17,39 @@ proc allStonePlacements(whoseTurn: Player, s: State, cb: (State, seq[Action])->v
         for action in s.actions:
             allStonePlacements(whoseTurn, s.next action, cb, path & @[action])
 
-proc bestNextAction(ss: State): Action =
+proc bestNextAction(ss: State, depth=0): Action =
     ## pick the best state
     var states: seq[(State, seq[Action])]
     allStonePlacements(ss.whoseTurn, ss, (s:State, path: seq[Action]) => states.add (s, path))
-    dump states.len
+    var total: int
+    if depth == 2:
+        total = states.len
     let bestTup = argmax(s, states):
-        -s[0].board.possibleMovesFor(ss.whoseTurn.other).len.float + rand(1.0)
-    echo "Selecting best state with {bestTup[0].board.possibleMovesFor(ss.whoseTurn.other).len} moves for opponent".fmt
-    #echo bestTup[0].board
-    #echo bestTup[0]
+        if depth == 2:
+            echo total
+            total -= 1
+        if depth == 0:
+            -s[0].board.possibleMovesFor(ss.whoseTurn.other).len.float + rand(1.0)
+        else:
+            -s[0].next(bestNextAction(s[0], depth-1)).board.possibleMovesFor(s[0].whoseTurn.other).len.float + rand(1.0)
+    #echo "Selecting best state with {bestTup[0].board.possibleMovesFor(ss.whoseTurn.other).len} moves for opponent".fmt
     bestTup[1][0]
 
 # Implementation
 type SimpleMooStrategy = ref object of Strategy
-method nextMove*(strat: Strategy, currentState: State, cb: StrategyMoveCallback): Action =
-    return bestNextAction(currentState)
-
+    depth: int
+method nextMove*(strat: SimpleMooStrategy, currentState: State, cb: StrategyMoveCallback): Action =
+    return bestNextAction(currentState, strat.depth)
 register SimpleMooStrategy(
     tag: "moo/one",
     selectOnRandom: true,
+    depth: 0,
 )
-
+register SimpleMooStrategy(
+    tag: "moo/two",
+    selectOnRandom: true,
+    depth: 2,
+)
 
 type StdinStrategy = ref object of Strategy
 method nextMove*(strat: StdinStrategy, currentState: State, cb: StrategyMoveCallback): Action =
