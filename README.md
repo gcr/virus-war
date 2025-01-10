@@ -37,8 +37,15 @@ nim c -d:useNeon=false runArenaMatch.nim
 ./runArenaMatch -A=player -B=od/50k
 # Human vs CPU (weak)
 ./runArenaMatch -A=player -B=hybrid/10k
+# Watch two CPUs fight
+./runArenaMatch -A=moo/50k -B=moo/50k
+# Random selection of CPU-vs-CPU bots:
+./runArenaMatch
 
-# Enter your moves in chess notation, like "f3" or "a2".
+# The list of possible bots is in mcts_library.nim and simpleStrategies.nim
+# Game details logged to game-log.sqlite, feel free to delete
+
+# Enter your moves in chess board notation, like "f3" or "a2".
 # Player A moves once, then each player trades off three times.
 ```
 
