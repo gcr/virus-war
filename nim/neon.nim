@@ -1,4 +1,6 @@
 ## ARM NEON intrinsics
+##
+## Especially nice for Apple M1 chips!
 
 {.push header: "arm_neon.h".}
 

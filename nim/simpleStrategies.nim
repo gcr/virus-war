@@ -18,7 +18,8 @@ proc allStonePlacements(whoseTurn: Player, s: State, cb: (State, seq[Action])->v
             allStonePlacements(whoseTurn, s.next action, cb, path & @[action])
 
 proc bestNextAction(ss: State, depth=0): Action =
-    ## pick the best state
+    ## No MCTS. Instead, pick the state that Minimizes the number of
+    ## Opponent Options ("moo")
     var states: seq[(State, seq[Action])]
     allStonePlacements(ss.whoseTurn, ss, (s:State, path: seq[Action]) => states.add (s, path))
     var total: int
@@ -53,6 +54,7 @@ register SimpleMooStrategy(
 
 type StdinStrategy = ref object of Strategy
 method nextMove*(strat: StdinStrategy, currentState: State, cb: StrategyMoveCallback): Action =
+    ## Ask a keyboard player what move to make.
     echo currentState.board
     echo currentState
     currentState.board.readLocFromStdin(currentState.whoseTurn)

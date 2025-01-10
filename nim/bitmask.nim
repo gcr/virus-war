@@ -10,9 +10,12 @@ when useNeon:
     import neon
 
 type Bitmask* = array[16, uint16]
-const nBits = sizeof(uint16) * 8
+## A Bitmask is a mask with a fixed 16x16 size.
+##
+const nBits = sizeof(uint16) * 8 ## In one row
 
 proc `$`*(bm: Bitmask): string =
+    ## Representation is 16 rows of 16 "0" or "1" characters.
     for row in bm:
         var row = row.reverseBits
         for c in 0 ..< nBits:
@@ -28,7 +31,7 @@ proc hash*(bm: Bitmask): Hash =
     return hsh.hash
 
 {.push inline, checks: off, assert: off.}
-#{.push.}
+## Bitmasks are addressed by row and column.
 proc `[]`*(bm: Bitmask, r: uint8, c: uint8): bool =
     if unlikely(r >= 16 or c >= 16):
         raise newException(IndexDefect, "bitmasks are 16x16")
@@ -41,6 +44,7 @@ proc `[]=`*(bm: var Bitmask, r: uint8, c: uint8, v: bool) =
         bm[r].clearBit(nBits-1 - c)
 
 proc setUnion*(bm: var Bitmask, other: Bitmask) =
+    ## Bitwise-or `bm` and `other`, storing the result in `bm`.
     when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
@@ -56,6 +60,7 @@ proc setUnion*(bm: var Bitmask, other: Bitmask) =
 
 
 proc setIntersect*(bm: var Bitmask, other: Bitmask) =
+    ## Bitwise-and `bm` and `other`, storing the result in `bm`.
     when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
@@ -70,6 +75,7 @@ proc setIntersect*(bm: var Bitmask, other: Bitmask) =
             bm[i] = bitand(bm[i], other[i])
 
 proc setSubtract*(bm: var Bitmask, other: Bitmask) =
+    ## Clears all masked bits: `bm = bm & ~other`
     when useNeon:
         var vec1A: uint8x16 = vld1q_u8(addr bm[0])
         var vec1B: uint8x16 = vld1q_u8(addr bm[8])
@@ -84,6 +90,13 @@ proc setSubtract*(bm: var Bitmask, other: Bitmask) =
             bm[i] = bitand(bm[i], bitxor(0xffff'u16, other[i]))
 
 proc dilate*(bm: var Bitmask) =
+    ## 2D Dilate operation. "1" bits are propogated to their neighbors.
+    ## ```
+    ## dilate(00000       (00111
+    ##        00010   =    01111
+    ##        00100        01111
+    ##        00000)       01110)
+    ## ```
     when useNeon:
         # dilate cols
         var vecA: uint16x8 = vld1q_u16(addr bm[0])
@@ -132,6 +145,7 @@ proc dilate*(bm: var Bitmask) =
         bm[bm.high] = bitor(bm[bm.high], prev)
 
 proc len*(bm: Bitmask): int =
+    ## Count the number of set bits. (Population count)
     when useNeon:
         var vecA: uint8x16 = vld1q_u8(addr bm[0])
         var vecB: uint8x16 = vld1q_u8(addr bm[8])
@@ -143,6 +157,7 @@ proc len*(bm: Bitmask): int =
         for row in bm: result += row.popcount
 
 proc clipSize*(bm: var Bitmask, width: uint8, height: uint8) =
+    ## Clears all bits outside [0..height, 0..width]
     for r in 0'u8..<height:
         #bm[r] = bm[r].bitand((1'u16.shl(width)-1).reverseBits)
         bm[r] = bm[r].bitand(bitxor(0xffff'u16, (1'u16 shl (nBits - width) - 1)))
@@ -151,10 +166,13 @@ proc clipSize*(bm: var Bitmask, width: uint8, height: uint8) =
 
 
 proc floodFill*(sources: Bitmask, mask: Bitmask): Bitmask =
+    ## Water flows out of each 1 bit in `sources` to fill
+    ## the entire array, constrained by the shape of `mask`'s
+    ## connected components.
     result = sources
     var oldCount = 0
     var newCount = sources.len
-    while newCount != oldCount:
+    while newCount != oldCount: # until full of water
         result.dilate
         result.setIntersect mask
         result.setUnion sources
@@ -165,6 +183,7 @@ proc floodFill*(sources: Bitmask, mask: Bitmask): Bitmask =
 
 
 proc sample*(bm: Bitmask): (uint8, uint8) =
+    ## Return `(row, column)` of a random set bit. (Probably quite slow.)
     var numNonzero = 0
     for row in bm:
         if row > 0'u16:
@@ -187,6 +206,7 @@ proc sample*(bm: Bitmask): (uint8, uint8) =
 
 
 iterator items*(bm: Bitmask): (uint8, uint8) {.inline.} =
+    ## Iterate through `(row, col)` of all set bits in `bm`.
     for ri in 0..bm.high:
         var tmp = bm[ri].reverseBits
         while tmp > 0:

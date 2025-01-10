@@ -12,9 +12,7 @@ import tables
 import bitmask
 import rdstdin
 
-const
-    maxSize* = 16
-    maxLocDeque* = 195
+const maxSize* = 16
 type
   Cell* = enum
     # convention: when B captures a LiveA cell, it becomes a LockedB cell
@@ -51,7 +49,6 @@ type
   Loc* = tuple
     r: uint8
     c: uint8
-  # Cells change ownership.
   Board* = object
     width*: uint8
     height*: uint8

@@ -229,9 +229,14 @@ proc mcts*(
         n_trials: int = 100000,
         h: HeuristicCallable,
         ): Action =
-    ## Run MCTS a certain number of times, using the given heuristic
+    ## Run MCTS a certain number of times, using the given heuristic.
+    ##
+    ## NOTE: Unused. See `strategyUtils.nim` for a better MCTS
+    ## implementation like this one that has:
+    ## - stopping criterion beyond hardcoded number of trials,
+    ## - selection criterion beyond maximum number of visits,
+    ## - optional callback per expansion
 
-    #var amafScores: array[maxLocDeque, float]
     for i in 0 ..< n_trials:
         let state = forest.selectAndExpand(current_state, h)
         forest.rollout(state, h)
